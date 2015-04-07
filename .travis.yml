@@ -17,8 +17,9 @@ env:
     - SOAPY_SDR_BRANCH=master
     - BUILD_TYPE=Release
   matrix:
-    - UHD_BRANCH=release_003_008_002
     - UHD_BRANCH=master
+    - UHD_BRANCH=release_003_008_002
+    - UHD_BRANCH=release_003_007_003
 
 before_install:
  # install a newer cmake since at this time Travis only has version 2.8.7

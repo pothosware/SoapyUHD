@@ -37,6 +37,12 @@ set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 find_package(SoapySDR CONFIG REQUIRED)
 find_package(UHD CONFIG)
 
+#try old-style find script
+if (NOT UHD_FOUND)
+    list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+    find_package(UHD)
+endif()
+
 if (NOT UHD_FOUND)
     message(WARNING "UHD not found -- required for Soapy UHD support")
     return()
