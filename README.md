@@ -6,8 +6,6 @@
 
 ##Dependencies
 
-* CMake
-* Boost C++ libraries
 * UHD - https://github.com/EttusResearch/uhd/wiki
 * SoapySDR - https://github.com/pothosware/SoapySDR/wiki
 
