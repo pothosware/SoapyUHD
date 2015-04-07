@@ -18,7 +18,7 @@ env:
     - BUILD_TYPE=Release
   matrix:
     - UHD_BRANCH=release_003_008_002
-    - UHD_BRANCH=release_003_007_003
+    - UHD_BRANCH=master
 
 before_install:
  # install a newer cmake since at this time Travis only has version 2.8.7
@@ -40,7 +40,7 @@ install:
  - pushd uhd/host
  - git checkout ${UHD_BRANCH}
  - mkdir build && cd build
- - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+ - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DENABLE_EXAMPLES=OFF -DENABLE_UTILS=OFF -DENABLE_TESTS=OFF -DENABLE_MANUAL=OFF -DENABLE_DOXYGEN=OFF -DENABLE_MAN_PAGES=OFF -DENABLE_OCTOCLOCK=OFF -DENABLE_USB=OFF -DENABLE_USRP2=OFF -DENABLE_X300=OFF
  - make && sudo make install
  - popd
 
