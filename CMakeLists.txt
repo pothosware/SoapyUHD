@@ -1,6 +1,6 @@
-# Copyright 2012-2014 Free Software Foundation, Inc.
+# Copyright 2012-2015 Free Software Foundation, Inc.
 #
-# This file is part of GrOsmoSDR support modules
+# This file is part of SoapyUHD support modules
 #
 # GNU Radio is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -124,7 +124,7 @@ message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 # Build a Soapy module to support UHD devices
 ########################################################################
 SOAPY_SDR_MODULE_UTIL(
-    TARGET uhdModule
+    TARGET uhdSupport
     SOURCES SoapyUHDDevice.cpp
     LIBRARIES
         ${UHD_LIBRARIES}
@@ -134,12 +134,12 @@ SOAPY_SDR_MODULE_UTIL(
 ########################################################################
 # Build a UHD module to support Soapy devices
 ########################################################################
-add_library(Soapy MODULE UHDSoapyDevice.cpp)
-target_link_libraries(Soapy
+add_library(soapySupport MODULE UHDSoapyDevice.cpp)
+target_link_libraries(soapySupport
     ${UHD_LIBRARIES}
     ${SoapySDR_LIBRARIES}
     ${Boost_LIBRARIES})
-install(TARGETS Soapy
+install(TARGETS soapySupport
     DESTINATION ${UHD_ROOT}/lib${LIB_SUFFIX}/uhd/modules
 )
 

@@ -1,6 +1,10 @@
 // Copyright (c) 2014-2015 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
 
+/***********************************************************************
+ * A Soapy module that supports UHD devices within the Soapy API.
+ **********************************************************************/
+
 #include "TypeHelpers.hpp"
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Registry.hpp>
