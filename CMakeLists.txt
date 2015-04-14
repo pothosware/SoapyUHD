@@ -109,15 +109,17 @@ set(Boost_ADDITIONAL_VERSIONS
 find_package(Boost COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 if(NOT Boost_FOUND)
-    message(WARNING "Boost required to build -- ignoring osmosdr support")
+    message(WARNING "Boost required to build -- ignoring uhd support")
     return()
 endif()
 
 ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK)
 
 include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
 message(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+message(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 
 ########################################################################
