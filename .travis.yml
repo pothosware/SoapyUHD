@@ -17,7 +17,6 @@ env:
     - SOAPY_SDR_BRANCH=master
     - BUILD_TYPE=Release
   matrix:
-    - UHD_BRANCH=master
     - UHD_BRANCH=release_003_008_002
     - UHD_BRANCH=release_003_007_003
 
