@@ -65,6 +65,10 @@ public:
             const std::string chName(boost::lexical_cast<std::string>(ch));
             spec.push_back(uhd::usrp::subdev_spec_pair_t(chName, chName));
         }
+
+        //spec cant be empty, we make a fake spec for apps work
+        if (spec.empty()) spec.push_back(uhd::usrp::subdev_spec_pair_t("0", "0"));
+
         return spec;
     }
 
@@ -129,6 +133,7 @@ public:
 
     void setupChannelHooks(const int dir);
     void setupChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName);
+    void setupFakeChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName);
 
 private:
     SoapySDR::Device *_device;
@@ -219,16 +224,6 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
     //setup channel and frontend hooks
     this->setupChannelHooks(SOAPY_SDR_RX);
     this->setupChannelHooks(SOAPY_SDR_TX);
-
-    //ensure that probe will work. Example:
-    //receive only devices still require tx properties to be filled out
-    BOOST_FOREACH(const std::string &dbName, _tree->list(mb_path / "dboards"))
-    {
-        if (not _tree->exists(mb_path / "tx_dsps")) _tree->create<int>(mb_path / "tx_dsps");
-        if (not _tree->exists(mb_path / "dboards" / dbName / "tx_frontends")) _tree->create<int>(mb_path / "dboards" / dbName / "tx_frontends");
-        if (not _tree->exists(mb_path / "tx_codecs" / dbName / "name")) _tree->create<std::string>(mb_path / "tx_codecs" / dbName / "name").set("None");
-        if (not _tree->exists(mb_path / "tx_codecs" / dbName / "gains")) _tree->create<int>(mb_path / "tx_codecs" / dbName / "gains");
-    }
 }
 
 UHDSoapyDevice::~UHDSoapyDevice(void)
@@ -245,6 +240,9 @@ void UHDSoapyDevice::setupChannelHooks(const int dir)
         const std::string chName(boost::lexical_cast<std::string>(ch));
         this->setupChannelHooks(dir, ch, dirName, chName);
     }
+
+    //cant have a completely empty direction for apps to work
+    if (_device->getNumChannels(dir) == 0) this->setupFakeChannelHooks(dir, 0, dirName, "0");
 }
 
 void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName)
@@ -256,6 +254,7 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
 
     _tree->create<std::string>(codec_path / "name").set("Soapy"+std::string((dir==SOAPY_SDR_RX)?"ADC":"DAC"));
     _tree->create<int>(codec_path / "gains"); //empty, gains in frontend
+    _tree->create<int>(rf_fe_path / "gains"); //in case its empty
     _tree->create<std::string>(rf_fe_path / "name").set("SoapyRF");
     _tree->create<std::string>(rf_fe_path / "connection").set("IQ");
 
@@ -364,6 +363,58 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
         .subscribe(boost::bind(&SoapySDR::Device::setBandwidth, _device, dir, chan, _1));
     _tree->create<uhd::meta_range_t>(rf_fe_path / "bandwidth" / "range")
         .publish(boost::bind(&UHDSoapyDevice::get_bw_range, this, dir, chan));
+}
+
+void UHDSoapyDevice::setupFakeChannelHooks(const int dir, const size_t /*chan*/, const std::string &dirName, const std::string &chName)
+{
+    const uhd::fs_path mb_path = "/mboards/0";
+    const uhd::fs_path rf_fe_path = mb_path / "dboards" / chName / (dirName+"_frontends") / chName;
+    const uhd::fs_path dsp_path = mb_path / (dirName+"_dsps") / chName;
+    const uhd::fs_path codec_path = mb_path / (dirName+"_codecs") / chName;
+
+    _tree->create<std::string>(codec_path / "name").set("None");
+    _tree->create<int>(codec_path / "gains"); //empty, gains in frontend
+    _tree->create<int>(rf_fe_path / "gains"); //in case its empty
+    _tree->create<std::string>(rf_fe_path / "name").set("None");
+    _tree->create<std::string>(rf_fe_path / "connection").set("IQ");
+
+    //samp rate
+    _tree->create<uhd::meta_range_t>(dsp_path / "rate" / "range").set(uhd::meta_range_t(0.0, 0.0));
+    _tree->create<double>(dsp_path / "rate" / "value").set(0.0);
+
+    //dsp freq
+    _tree->create<double>(dsp_path / "freq" / "value").set(0.0);
+    _tree->create<uhd::meta_range_t>(dsp_path / "freq" / "range").set(uhd::meta_range_t(0.0, 0.0));
+
+    //frontend sensors
+    _tree->create<int>(rf_fe_path / "sensors"); //ensure this path exists
+
+    //dummy eeprom values
+    if (dir == SOAPY_SDR_RX)
+    {
+        _tree->create<uhd::usrp::dboard_eeprom_t>(mb_path / "dboards" / chName / "rx_eeprom")
+            .set(uhd::usrp::dboard_eeprom_t());
+    }
+    else
+    {
+        _tree->create<uhd::usrp::dboard_eeprom_t>(mb_path / "dboards" / chName / "tx_eeprom")
+            .set(uhd::usrp::dboard_eeprom_t());
+        _tree->create<uhd::usrp::dboard_eeprom_t>(mb_path / "dboards" / chName / "gdb_eeprom")
+            .set(uhd::usrp::dboard_eeprom_t());
+    }
+
+    //freq
+    _tree->create<double>(rf_fe_path / "freq" / "value").set(0.0);
+    _tree->create<uhd::meta_range_t>(rf_fe_path / "freq" / "range").set(uhd::meta_range_t(0.0, 0.0));
+    _tree->create<bool>(rf_fe_path / "use_lo_offset").set(false);
+
+    //ant
+    _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("");
+    _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(std::vector<std::string>());
+
+    //bw
+    _tree->create<double>(rf_fe_path / "bandwidth" / "value").set(0.0);
+    _tree->create<uhd::meta_range_t>(rf_fe_path / "bandwidth" / "range").set(uhd::meta_range_t(0.0, 0.0));
 }
 
 /***********************************************************************
