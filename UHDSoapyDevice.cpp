@@ -219,6 +219,16 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
     //setup channel and frontend hooks
     this->setupChannelHooks(SOAPY_SDR_RX);
     this->setupChannelHooks(SOAPY_SDR_TX);
+
+    //ensure that probe will work. Example:
+    //receive only devices still require tx properties to be filled out
+    BOOST_FOREACH(const std::string &dbName, _tree->list(mb_path / "dboards"))
+    {
+        if (not _tree->exists(mb_path / "tx_dsps")) _tree->create<int>(mb_path / "tx_dsps");
+        if (not _tree->exists(mb_path / "dboards" / dbName / "tx_frontends")) _tree->create<int>(mb_path / "dboards" / dbName / "tx_frontends");
+        if (not _tree->exists(mb_path / "tx_codecs" / dbName / "name")) _tree->create<std::string>(mb_path / "tx_codecs" / dbName / "name").set("None");
+        if (not _tree->exists(mb_path / "tx_codecs" / dbName / "gains")) _tree->create<int>(mb_path / "tx_codecs" / dbName / "gains");
+    }
 }
 
 UHDSoapyDevice::~UHDSoapyDevice(void)
@@ -229,9 +239,9 @@ UHDSoapyDevice::~UHDSoapyDevice(void)
 
 void UHDSoapyDevice::setupChannelHooks(const int dir)
 {
+    const std::string dirName((dir==SOAPY_SDR_RX)?"rx":"tx");
     for (size_t ch = 0; ch < _device->getNumChannels(dir); ch++)
     {
-        const std::string dirName((dir==SOAPY_SDR_RX)?"rx":"tx");
         const std::string chName(boost::lexical_cast<std::string>(ch));
         this->setupChannelHooks(dir, ch, dirName, chName);
     }
