@@ -780,6 +780,7 @@ static uhd::device_addrs_t findUHDSoapyDevice(const uhd::device_addr_t &args_)
     {
         found.erase(SOAPY_UHD_NO_DEEPER);
         result.push_back(kwargsToDict(found));
+        result.back()["type"] = "soapy";
     }
     return result;
 }
