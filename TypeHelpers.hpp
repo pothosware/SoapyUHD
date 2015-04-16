@@ -50,6 +50,7 @@ static inline uhd::meta_range_t rangeListToMetaRange(const SoapySDR::RangeList &
     {
         out.push_back(uhd::range_t(ranges[i].minimum(), ranges[i].maximum()));
     }
+    if (out.empty()) out.push_back(uhd::range_t(0.0));
     return out;
 }
 
@@ -65,6 +66,7 @@ uhd::meta_range_t numberListToMetaRange(const std::vector<double> &nums)
     {
         out.push_back(uhd::range_t(nums[i]));
     }
+    if (out.empty()) out.push_back(uhd::range_t(0.0));
     return out;
 }
 
