@@ -81,7 +81,7 @@ static inline std::vector<double> metaRangeToNumericList(const uhd::meta_range_t
     return out;
 }
 
-static inline uhd::meta_range_t rangeToMetaRange(const SoapySDR::Range &range)
+static inline uhd::meta_range_t rangeToMetaRange(const SoapySDR::Range &range, const double step = 0.0)
 {
-    return uhd::meta_range_t(range.minimum(), range.maximum());
+    return uhd::meta_range_t(range.minimum(), range.maximum(), step);
 }

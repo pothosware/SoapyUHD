@@ -27,6 +27,10 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/algorithm/string.hpp>
 
+//Report a positive gain step value for UHD's automatic distribution algorithm.
+//This prevents the gain group rounding algorithm from producing zero values.
+static const double MIN_GAIN_STEP = 0.1;
+
 /***********************************************************************
  * Custom UHD Device to support Soapy
  **********************************************************************/
@@ -108,7 +112,7 @@ public:
 
     uhd::meta_range_t get_gain_range(const int dir, const size_t chan, const std::string &name)
     {
-        return rangeToMetaRange(_device->getGainRange(dir, chan, name));
+        return rangeToMetaRange(_device->getGainRange(dir, chan, name), MIN_GAIN_STEP);
     }
 
     uhd::sensor_value_t get_mboard_sensor(const std::string &name)
