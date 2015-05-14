@@ -1,0 +1,9 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: soapyuhd
+Source: https://github.com/pothosware/SoapyUHD/wiki
+
+Files: *
+Copyright: 2014-2015 Josh Blum <josh@pothosware.com>
+License: GPL-3
+ The full text of the GPL is distributed as COPYING in moreutils's source,
+ and is distributed in /usr/share/common-licenses/GPL-3 on Debian systems.
