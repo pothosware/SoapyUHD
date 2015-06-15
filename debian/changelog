@@ -1,5 +1,5 @@
-soapyuhd (0.1.0+2SNAPSHOT1431752148-gb16971cb~vivid) vivid; urgency=low
+soapyuhd (0.1.0) unstable; urgency=low
 
-  * Pending release (master branch)
+  * Release 0.1.0 (2015-06-15)
 
- -- Josh Blum <josh@pothosware.com>  Fri, 15 May 2015 23:55:03 -0500
+ -- Josh Blum <josh@pothosware.com>  Mon, 15 Jun 2015 12:29:52 -0400
