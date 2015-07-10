@@ -20,7 +20,7 @@
 ########################################################################
 # Project setup
 ########################################################################
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.7)
 project(SoapyUHD CXX C)
 enable_testing()
 
@@ -34,8 +34,8 @@ set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 ########################################################################
 # Dependencies
 ########################################################################
-find_package(SoapySDR CONFIG REQUIRED)
-find_package(UHD CONFIG)
+find_package(SoapySDR NO_MODULE REQUIRED)
+find_package(UHD NO_MODULE)
 
 #try old-style find script
 if (NOT UHD_FOUND)
