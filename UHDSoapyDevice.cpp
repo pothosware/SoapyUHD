@@ -115,9 +115,8 @@ public:
         return rangeToMetaRange(_device->getGainRange(dir, chan, name), MIN_GAIN_STEP);
     }
 
-    uhd::sensor_value_t get_mboard_sensor(const std::string &name)
+    uhd::sensor_value_t __valueToSensor(const std::string &value, const std::string &name)
     {
-        const std::string &value = _device->readSensor(name);
         if (value == "true") return uhd::sensor_value_t(name, true, "true", "false");
         if (value == "false") return uhd::sensor_value_t(name, true, "true", "false");
         try
@@ -127,6 +126,16 @@ public:
         }
         catch (const boost::bad_lexical_cast &){}
         return uhd::sensor_value_t(name, value, "");
+    }
+
+    uhd::sensor_value_t get_mboard_sensor(const std::string &name)
+    {
+        return __valueToSensor(_device->readSensor(name), name);
+    }
+
+    uhd::sensor_value_t get_channel_sensor(const int dir, const size_t chan, const std::string &name)
+    {
+        return __valueToSensor(_device->readSensor(dir, chan, name), name);
     }
 
     void old_issue_stream_cmd(const size_t chan, const uhd::stream_cmd_t &cmd)
@@ -234,9 +243,6 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
     _tree->create<int>(mb_path / "sensors"); //ensure this path exists
     BOOST_FOREACH(const std::string &name, _device->listSensors())
     {
-        std::string nameLower(name); boost::algorithm::to_lower(nameLower);
-        if (nameLower.substr(0, 2) == "rx") continue; //install in frontend sensors
-        if (nameLower.substr(0, 2) == "tx") continue; //install in frontend sensors
         _tree->create<uhd::sensor_value_t>(mb_path / "sensors" / name)
             .publish(boost::bind(&UHDSoapyDevice::get_mboard_sensor, this, name));
     }
@@ -326,29 +332,11 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
 
     //frontend sensors
     _tree->create<int>(rf_fe_path / "sensors"); //ensure this path exists
-    BOOST_FOREACH(const std::string &name, _device->listSensors())
+    BOOST_FOREACH(const std::string &name, _device->listSensors(dir, chan))
     {
-        //parse the name for tx/rx formatting
-        int sensorChan = 0;
-        std::string prefix;
-        std::string suffix;
-        bool after_underscore = false;
-        BOOST_FOREACH(const char ch, name)
-        {
-            if (after_underscore) suffix += ch;
-            else if (ch == '_') after_underscore = true;
-            else if (std::isdigit(ch)) sensorChan = (sensorChan*10) + (sensorChan-'0');
-            else prefix += ch;
-        }
-
-        //check for channel and direction match
-        boost::algorithm::to_lower(prefix);
-        if (prefix != dirName) continue;
-        if (sensorChan != int(chan)) continue;
-
         //install the sensor
-        _tree->create<uhd::sensor_value_t>(mb_path / "sensors" / suffix)
-            .publish(boost::bind(&UHDSoapyDevice::get_mboard_sensor, this, name));
+        _tree->create<uhd::sensor_value_t>(rf_fe_path / "sensors" / name)
+            .publish(boost::bind(&UHDSoapyDevice::get_channel_sensor, this, dir, chan, name));
     }
 
     //dummy eeprom values
