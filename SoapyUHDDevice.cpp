@@ -636,6 +636,64 @@ public:
         return _dev->get_mboard_sensor(name).value;
     }
 
+    /*******************************************************************
+     * GPIO API
+     ******************************************************************/
+
+    /*!
+     * Helpful markup to set the ATRs and CTRL from the writeGPIO API.
+     * dev->writeGPIO("BANKFOO:ATR_TX", 0xffff);
+     */
+    void __splitBankName(const std::string &name, std::string &bank, std::string &attr)
+    {
+        const size_t sepPos = name.find(':');
+        if (sepPos == std::string::npos)
+        {
+            bank = name;
+            attr = "OUT";
+            return;
+        }
+        bank = name.substr(0, sepPos);
+        attr = name.substr(sepPos+1);
+    }
+
+    std::vector<std::string> listGPIOBanks(void) const
+    {
+        return _dev->get_gpio_banks(0);
+    }
+
+    void writeGPIO(const std::string &name, const unsigned value)
+    {
+        std::string bank, attr; __splitBankName(name, bank, attr);
+        _dev->set_gpio_attr(bank, attr, value);
+    }
+
+    void writeGPIO(const std::string &name, const unsigned value, const unsigned mask)
+    {
+        std::string bank, attr; __splitBankName(name, bank, attr);
+        _dev->set_gpio_attr(bank, attr, value, mask);
+    }
+
+    unsigned readGPIO(const std::string &bank) const
+    {
+        return _dev->get_gpio_attr(bank, "READBACK");
+    }
+
+    void writeGPIODir(const std::string &bank, const unsigned dir)
+    {
+        _dev->set_gpio_attr(bank, "DDR", dir);
+    }
+
+    void writeGPIODir(const std::string &bank, const unsigned dir, const unsigned mask)
+    {
+        _dev->set_gpio_attr(bank, "DDR", dir, mask);
+    }
+
+    unsigned readGPIODir(const std::string &bank) const
+    {
+        return _dev->get_gpio_attr(bank, "DDR");
+    }
+
 private:
     uhd::usrp::multi_usrp::sptr _dev;
     const std::string _type;

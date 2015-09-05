@@ -139,6 +139,22 @@ public:
     void setupChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName);
     void setupFakeChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName);
 
+    void set_gpio_attr(const std::string &bank, const std::string &attr, const boost::uint32_t value)
+    {
+        if (attr == "READBACK") return; //readback is never written
+        if (attr == "OUT") return _device->writeGPIO(bank, value);
+        if (attr == "DDR") return _device->writeGPIODir(bank, value);
+        return _device->writeGPIO(bank+":"attr, value);
+    }
+
+    boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr)
+    {
+        if (attr == "READBACK") return _device->readGPIO(bank);
+        if (attr == "OUT") return _device->readGPIO(bank); //usually OUT is cached output setting
+        if (attr == "DDR") return _device->readGPIODir(bank);
+        return _device->readGPIO(bank+":"attr);
+    }
+
 private:
     SoapySDR::Device *_device;
 
@@ -223,6 +239,26 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
         if (nameLower.substr(0, 2) == "tx") continue; //install in frontend sensors
         _tree->create<uhd::sensor_value_t>(mb_path / "sensors" / name)
             .publish(boost::bind(&UHDSoapyDevice::get_mboard_sensor, this, name));
+    }
+
+    //gpio banks
+    BOOST_FOREACH(const std::string &bank, _device->listGPIOBanks())
+    {
+        std::vector<std::string> attrs;
+        attrs.push_back("CTRL");
+        attrs.push_back("DDR");
+        attrs.push_back("OUT");
+        attrs.push_back("ATR_0X");
+        attrs.push_back("ATR_RX");
+        attrs.push_back("ATR_TX");
+        attrs.push_back("ATR_XX");
+        attrs.push_back("READBACK");
+        BOOST_FOREACH(const std::string &attr, attrs)
+        {
+            _tree->create<boost::uint32_t>(mb_path / "gpio" / bank / attr)
+                .subscribe(boost::bind(&UHDSoapyDevice::set_gpio_attr, this, bank, attr, _1))
+                .publish(boost::bind(&UHDSoapyDevice::get_gpio_attr, this, bank, attr));
+        }
     }
 
     //setup channel and frontend hooks
