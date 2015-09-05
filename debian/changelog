@@ -1,5 +1,6 @@
 soapyuhd (0.1.2) unstable; urgency=low
 
+  * Switched to using per-channel and global sensors API
   * Added GPIO access support for Soapy UHD and vice-versa
 
  -- Josh Blum <josh@pothosware.com>  Fri, 04 Sep 2015 19:37:28 -0700

@@ -595,45 +595,26 @@ public:
 
     std::vector<std::string> listSensors(void) const
     {
-        std::vector<std::string> names = _dev->get_mboard_sensor_names();
-
-        for (size_t i = 0; i < this->getNumChannels(SOAPY_SDR_TX); i++)
-        {
-            BOOST_FOREACH(const std::string &name, _dev->get_tx_sensor_names(i))
-            {
-                names.push_back(str(boost::format("tx%d_%s") % i % name));
-            }
-        }
-        for (size_t i = 0; i < this->getNumChannels(SOAPY_SDR_RX); i++)
-        {
-            BOOST_FOREACH(const std::string &name, _dev->get_rx_sensor_names(i))
-            {
-                names.push_back(str(boost::format("rx%d_%s") % i % name));
-            }
-        }
-
-        return names;
+        return _dev->get_mboard_sensor_names();
     }
 
     std::string readSensor(const std::string &name) const
     {
-        //parse the name for tx/rx formatting
-        int chan = 0;
-        std::string prefix;
-        std::string suffix;
-        bool after_underscore = false;
-        BOOST_FOREACH(const char ch, name)
-        {
-            if (after_underscore) suffix += ch;
-            else if (ch == '_') after_underscore = true;
-            else if (std::isdigit(ch)) chan = (chan*10) + (chan-'0');
-            else prefix += ch;
-        }
-
-        //read the sensor
-        if (prefix == "tx") return _dev->get_tx_sensor(suffix, chan).value;
-        if (prefix == "rx") return _dev->get_rx_sensor(suffix, chan).value;
         return _dev->get_mboard_sensor(name).value;
+    }
+
+    std::vector<std::string> listSensors(const int dir, const size_t channel) const
+    {
+        if (dir == SOAPY_SDR_TX) return _dev->get_tx_sensor_names(channel);
+        if (dir == SOAPY_SDR_RX) return _dev->get_rx_sensor_names(channel);
+        return SoapySDR::Device::listSensors(dir, channel);
+    }
+
+    std::string readSensor(const int dir, const size_t channel, const std::string &name) const
+    {
+        if (dir == SOAPY_SDR_TX) return _dev->get_tx_sensor(name, channel).value;
+        if (dir == SOAPY_SDR_RX) return _dev->get_rx_sensor(name, channel).value;
+        return SoapySDR::Device::readSensor(dir, channel, name);
     }
 
     /*******************************************************************
