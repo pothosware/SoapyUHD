@@ -144,7 +144,7 @@ public:
         if (attr == "READBACK") return; //readback is never written
         if (attr == "OUT") return _device->writeGPIO(bank, value);
         if (attr == "DDR") return _device->writeGPIODir(bank, value);
-        return _device->writeGPIO(bank+":"attr, value);
+        return _device->writeGPIO(bank+":"+attr, value);
     }
 
     boost::uint32_t get_gpio_attr(const std::string &bank, const std::string &attr)
@@ -152,7 +152,7 @@ public:
         if (attr == "READBACK") return _device->readGPIO(bank);
         if (attr == "OUT") return _device->readGPIO(bank); //usually OUT is cached output setting
         if (attr == "DDR") return _device->readGPIODir(bank);
-        return _device->readGPIO(bank+":"attr);
+        return _device->readGPIO(bank+":"+attr);
     }
 
 private:
