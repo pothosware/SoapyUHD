@@ -282,15 +282,36 @@ public:
     /*******************************************************************
      * Frontend corrections support
      ******************************************************************/
+    bool hasDCOffsetMode(const int dir, const size_t) const
+    {
+        //since we don't have a way to really query this,
+        //assume that DC offset removal is always supported on RX
+        return (dir == SOAPY_SDR_RX);
+    }
+
     void setDCOffsetMode(const int dir, const size_t channel, const bool automatic)
     {
         if (dir == SOAPY_SDR_RX) _dev->set_rx_dc_offset(automatic, channel);
+    }
+
+    bool hasDCOffset(const int, const size_t) const
+    {
+        //since we don't have a way to really query this,
+        //assume that DC offset is always supported
+        return true;
     }
 
     void setDCOffset(const int dir, const size_t channel, const std::complex<double> &offset)
     {
         if (dir == SOAPY_SDR_TX) _dev->set_tx_dc_offset(offset, channel);
         if (dir == SOAPY_SDR_RX) _dev->set_rx_dc_offset(offset, channel);
+    }
+
+    bool hasIQBalance(const int, const size_t) const
+    {
+        //since we don't have a way to really query this,
+        //assume that IQ balance is always supported
+        return true;
     }
 
     void setIQBalance(const int dir, const size_t channel, const std::complex<double> &balance)

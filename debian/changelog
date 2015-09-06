@@ -1,5 +1,6 @@
 soapyuhd (0.1.2) unstable; urgency=low
 
+  * Hooks for 'has' DC offset mode, DC offset, and IQ balance
   * Switched to using per-channel and global sensors API
   * Added GPIO access support for Soapy UHD and vice-versa
 
