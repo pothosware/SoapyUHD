@@ -73,6 +73,15 @@ uhd::meta_range_t numberListToMetaRange(const std::vector<double> &nums)
 static inline std::vector<double> metaRangeToNumericList(const uhd::meta_range_t &metaRange)
 {
     std::vector<double> out;
+
+    //in this case, the bounds are in element 0
+    if (metaRange.size() == 1)
+    {
+        out.push_back(metaRange[0].start());
+        out.push_back(metaRange[0].stop());
+        return out;
+    }
+
     for (size_t i = 0; i < metaRange.size(); i++)
     {
         //in these cases start == stop
