@@ -798,7 +798,9 @@ static uhd::device_addrs_t findUHDSoapyDevice(const uhd::device_addr_t &args_)
     //prevent going into the the SoapyUHDDevice
     SoapySDR::Kwargs args(dictToKwargs(args_));
     if (args.count(SOAPY_UHD_NO_DEEPER) != 0) return uhd::device_addrs_t();
-    args[SOAPY_UHD_NO_DEEPER] = "";
+    //when driver is specified and its not uhd, we can go deeper...
+    if (args.count("driver") != 0 and args.at("driver") != "uhd"){}
+    else args[SOAPY_UHD_NO_DEEPER] = ""; //otherwise no-deeper
 
     //type filter for soapy devices
     if (args.count("type") != 0 and args.at("type") != "soapy") return uhd::device_addrs_t();
