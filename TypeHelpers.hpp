@@ -5,6 +5,7 @@
 #include <SoapySDR/Types.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/sensors.hpp>
 #include <vector>
 
 #define SOAPY_UHD_NO_DEEPER "soapy_uhd_no_deeper"
@@ -59,7 +60,7 @@ static inline SoapySDR::Range metaRangeToRange(const uhd::meta_range_t &metaRang
     return SoapySDR::Range(metaRange.start(), metaRange.stop());
 }
 
-uhd::meta_range_t numberListToMetaRange(const std::vector<double> &nums)
+static inline uhd::meta_range_t numberListToMetaRange(const std::vector<double> &nums)
 {
     uhd::meta_range_t out;
     for (size_t i = 0; i < nums.size(); i++)
@@ -93,4 +94,33 @@ static inline std::vector<double> metaRangeToNumericList(const uhd::meta_range_t
 static inline uhd::meta_range_t rangeToMetaRange(const SoapySDR::Range &range, const double step = 0.0)
 {
     return uhd::meta_range_t(range.minimum(), range.maximum(), step);
+}
+
+static inline SoapySDR::ArgInfo sensorToArgInfo(const uhd::sensor_value_t &sensor, const std::string &key)
+{
+    SoapySDR::ArgInfo argInfo;
+    argInfo.key = key;
+    argInfo.value = sensor.value;
+    argInfo.name = sensor.name;
+    argInfo.units = sensor.unit;
+    switch (sensor.type)
+    {
+    case uhd::sensor_value_t::BOOLEAN: argInfo.type = SoapySDR::ArgInfo::BOOL; break;
+    case uhd::sensor_value_t::INTEGER: argInfo.type = SoapySDR::ArgInfo::INT; break;
+    case uhd::sensor_value_t::REALNUM: argInfo.type = SoapySDR::ArgInfo::FLOAT; break;
+    case uhd::sensor_value_t::STRING: argInfo.type = SoapySDR::ArgInfo::STRING; break;
+    }
+    return argInfo;
+}
+
+static inline uhd::sensor_value_t argInfoToSensor(const SoapySDR::ArgInfo &argInfo, const std::string &value)
+{
+    switch (argInfo.type)
+    {
+    case SoapySDR::ArgInfo::BOOL: return uhd::sensor_value_t(argInfo.name, value == "true", argInfo.units, argInfo.units);
+    case SoapySDR::ArgInfo::INT: return uhd::sensor_value_t(argInfo.name, atoi(value.c_str()), argInfo.units);
+    case SoapySDR::ArgInfo::FLOAT: return uhd::sensor_value_t(argInfo.name, atof(value.c_str()), argInfo.units);
+    case SoapySDR::ArgInfo::STRING: return uhd::sensor_value_t(argInfo.name, value, argInfo.units);
+    }
+    return uhd::sensor_value_t(argInfo.name, value, argInfo.units);
 }

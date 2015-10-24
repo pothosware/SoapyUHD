@@ -1,3 +1,13 @@
+soapyuhd (0.3.0) unstable; urgency=low
+
+  * SoapyUHDDevice - implement getSensorInfo() for SoapySDR v0.4
+  * SoapyUHDDevice - implement getStreamArgsInfo() for SoapySDR v0.4
+  * SoapyUHDDevice - implement getNativeStreamFormat() for SoapySDR v0.4
+  * SoapyUHDDevice - implement getStreamFormats() for SoapySDR v0.4
+  * UHDSoapyDevice - use getSensorInfo() for sensors
+
+ -- Josh Blum <josh@pothosware.com>  Fri, 23 Oct 2015 21:01:40 -0700
+
 soapyuhd (0.2.0) unstable; urgency=low
 
   * Hooks for 'has' DC offset mode, DC offset, and IQ balance

@@ -115,27 +115,14 @@ public:
         return rangeToMetaRange(_device->getGainRange(dir, chan, name), MIN_GAIN_STEP);
     }
 
-    uhd::sensor_value_t __valueToSensor(const std::string &value, const std::string &name)
-    {
-        if (value == "true") return uhd::sensor_value_t(name, true, "true", "false");
-        if (value == "false") return uhd::sensor_value_t(name, true, "true", "false");
-        try
-        {
-            const double valueNum = boost::lexical_cast<double>(value);
-            return uhd::sensor_value_t(name, valueNum, "");
-        }
-        catch (const boost::bad_lexical_cast &){}
-        return uhd::sensor_value_t(name, value, "");
-    }
-
     uhd::sensor_value_t get_mboard_sensor(const std::string &name)
     {
-        return __valueToSensor(_device->readSensor(name), name);
+        return argInfoToSensor(_device->getSensorInfo(name), _device->readSensor(name));
     }
 
     uhd::sensor_value_t get_channel_sensor(const int dir, const size_t chan, const std::string &name)
     {
-        return __valueToSensor(_device->readSensor(dir, chan, name), name);
+        return argInfoToSensor(_device->getSensorInfo(dir, chan, name), _device->readSensor(dir, chan, name));
     }
 
     void old_issue_stream_cmd(const size_t chan, const uhd::stream_cmd_t &cmd)

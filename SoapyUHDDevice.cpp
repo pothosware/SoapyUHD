@@ -32,9 +32,10 @@ struct SoapyUHDStream
 class SoapyUHDDevice : public SoapySDR::Device
 {
 public:
-    SoapyUHDDevice(uhd::usrp::multi_usrp::sptr dev, const std::string &type):
+    SoapyUHDDevice(uhd::usrp::multi_usrp::sptr dev, const SoapySDR::Kwargs &args):
         _dev(dev),
-        _type(type)
+        _type(args.at("type")),
+        _isNetworkDevice(args.count("addr") != 0)
     {
         return;
     }
@@ -109,6 +110,89 @@ public:
     /*******************************************************************
      * Stream support
      ******************************************************************/
+    std::vector<std::string> getStreamFormats(const int, const size_t) const
+    {
+        std::vector<std::string> formats;
+        formats.push_back("CS8");
+        formats.push_back("CS12");
+        formats.push_back("CS16");
+        formats.push_back("CF32");
+        formats.push_back("CF64");
+        return formats;
+    }
+
+    std::string getNativeStreamFormat(const int, const size_t, double &fullScale) const
+    {
+        fullScale = (1 << 15);
+        return "CS16";
+    }
+
+    SoapySDR::ArgInfoList getStreamArgsInfo(const int direction, const size_t) const
+    {
+        SoapySDR::ArgInfoList streamArgs;
+
+        SoapySDR::ArgInfo sppArg;
+        sppArg.key = "spp";
+        sppArg.value = "0";
+        sppArg.name = "Samples per packet";
+        sppArg.description = "The number of samples per packet.";
+        sppArg.units = "samples";
+        sppArg.type = SoapySDR::ArgInfo::INT;
+        streamArgs.push_back(sppArg);
+
+        SoapySDR::ArgInfo wireFormatArg;
+        wireFormatArg.key = "WIRE";
+        wireFormatArg.value = "";
+        wireFormatArg.name = "Bus format";
+        wireFormatArg.description = "The format of samples over the bus.";
+        wireFormatArg.type = SoapySDR::ArgInfo::STRING;
+        wireFormatArg.options.push_back("sc8");
+        wireFormatArg.options.push_back("sc16");
+        wireFormatArg.optionNames.push_back("Complex bytes");
+        wireFormatArg.optionNames.push_back("Complex shorts");
+        streamArgs.push_back(wireFormatArg);
+
+        SoapySDR::ArgInfo peakArgs;
+        peakArgs.key = "peak";
+        peakArgs.value = "1.0";
+        peakArgs.name = "Peak value";
+        peakArgs.description = "The peak value for scaling in complex byte mode.";
+        peakArgs.type = SoapySDR::ArgInfo::FLOAT;
+        streamArgs.push_back(peakArgs);
+
+        const std::string key = (direction == SOAPY_SDR_RX)?"recv":"send";
+        const std::string name = (direction == SOAPY_SDR_RX)?"Receive":"Send";
+
+        SoapySDR::ArgInfo bufSizeArgs;
+        bufSizeArgs.key = key+"_buff_size";
+        bufSizeArgs.value = "0";
+        bufSizeArgs.name = name + " socket buffer size";
+        bufSizeArgs.description = "The size of the kernel socket buffer in bytes. Use 0 for automatic.";
+        bufSizeArgs.units = "bytes";
+        bufSizeArgs.type = SoapySDR::ArgInfo::INT;
+        if (_isNetworkDevice) streamArgs.push_back(bufSizeArgs);
+
+        SoapySDR::ArgInfo frameSizeArgs;
+        frameSizeArgs.key = key+"_frame_size";
+        frameSizeArgs.value = "";
+        frameSizeArgs.name = name + " frame buffer size";
+        frameSizeArgs.description = "The size an individual datagram or frame in bytes.";
+        frameSizeArgs.units = "bytes";
+        frameSizeArgs.type = SoapySDR::ArgInfo::INT;
+        streamArgs.push_back(frameSizeArgs);
+
+        SoapySDR::ArgInfo numFrameArgs;
+        numFrameArgs.key = "num_"+key+"_frames";
+        numFrameArgs.value = "";
+        numFrameArgs.name = name + " number of buffers";
+        numFrameArgs.description = "The number of available buffers.";
+        numFrameArgs.units = "buffers";
+        numFrameArgs.type = SoapySDR::ArgInfo::INT;
+        streamArgs.push_back(numFrameArgs);
+
+        return streamArgs;
+    }
+
     SoapySDR::Stream *setupStream(const int dir, const std::string &format, const std::vector<size_t> &channels, const SoapySDR::Kwargs &args)
     {
         std::string hostFormat;
@@ -619,6 +703,11 @@ public:
         return _dev->get_mboard_sensor_names();
     }
 
+    SoapySDR::ArgInfo getSensorInfo(const std::string &name) const
+    {
+        return sensorToArgInfo(_dev->get_mboard_sensor(name), name);
+    }
+
     std::string readSensor(const std::string &name) const
     {
         return _dev->get_mboard_sensor(name).value;
@@ -629,6 +718,13 @@ public:
         if (dir == SOAPY_SDR_TX) return _dev->get_tx_sensor_names(channel);
         if (dir == SOAPY_SDR_RX) return _dev->get_rx_sensor_names(channel);
         return SoapySDR::Device::listSensors(dir, channel);
+    }
+
+    SoapySDR::ArgInfo getSensorInfo(const int dir, const size_t channel, const std::string &name) const
+    {
+        if (dir == SOAPY_SDR_TX) return sensorToArgInfo(_dev->get_tx_sensor(name, channel), name);
+        if (dir == SOAPY_SDR_RX) return sensorToArgInfo(_dev->get_rx_sensor(name, channel), name);
+        return SoapySDR::Device::getSensorInfo(dir, channel, name);
     }
 
     std::string readSensor(const int dir, const size_t channel, const std::string &name) const
@@ -699,6 +795,7 @@ public:
 private:
     uhd::usrp::multi_usrp::sptr _dev;
     const std::string _type;
+    const bool _isNetworkDevice;
 };
 
 /***********************************************************************
@@ -755,7 +852,7 @@ SoapySDR::Device *make_uhd(const SoapySDR::Kwargs &args)
         "or rebuild SoapySDR UHD support against this ABI version.\n"
     ) % UHD_VERSION_ABI_STRING % uhd::get_abi_string()));
     uhd::msg::register_handler(&SoapyUHDLogger);
-    return new SoapyUHDDevice(uhd::usrp::multi_usrp::make(kwargsToDict(args)), args.at("type"));
+    return new SoapyUHDDevice(uhd::usrp::multi_usrp::make(kwargsToDict(args)), args);
 }
 
 static SoapySDR::Registry register__uhd("uhd", &find_uhd, &make_uhd, SOAPY_SDR_ABI_VERSION);
