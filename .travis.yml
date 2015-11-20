@@ -38,7 +38,7 @@ install:
   - sudo apt-get install -qq libboost-all-dev
 
   #sdr development files
-  - sudo apt-get install -qq libuhd-dev
+  - sudo apt-get install --no-install-recommends -q -y libuhd-dev
 
   # install SoapySDR from source
   - git clone https://github.com/pothosware/SoapySDR.git
