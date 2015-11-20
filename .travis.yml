@@ -1,12 +1,15 @@
 ########################################################################
 ## Travis CI config for SoapyUHD
 ##
+## * installs UHD from PPA
 ## * installs SoapySDR from source
-## * installs UHD from source
 ## * matrix tests multiple UHD versions
 ## * confirms build and install
 ## * no unit tests
 ########################################################################
+
+sudo: required
+dist: trusty
 
 language: cpp
 compiler: gcc
@@ -15,27 +18,34 @@ env:
   global:
     - INSTALL_PREFIX=/usr/local
     - SOAPY_SDR_BRANCH=master
-    - BUILD_TYPE=Release
   matrix:
-    - UHD_BRANCH=release_003_008_002
-    - UHD_BRANCH=release_003_007_003
+    - BUILD_TYPE=Debug
+    - BUILD_TYPE=Release
+
+before_install:
+  # regular ubuntu packages
+  - sudo add-apt-repository main
+  - sudo add-apt-repository universe
+
+  # driver development files from ppa
+  - sudo add-apt-repository -y ppa:myriadrf/drivers
+
+  # update after package changes
+  - sudo apt-get update
 
 install:
-  - sudo apt-get install -qq cmake libboost-all-dev python-cheetah
+  #boost development files
+  - sudo apt-get install -qq libboost-all-dev
+
+  #sdr development files
+  - sudo apt-get install -qq libuhd-dev
+
   # install SoapySDR from source
   - git clone https://github.com/pothosware/SoapySDR.git
   - pushd SoapySDR
   - git checkout ${SOAPY_SDR_BRANCH}
   - mkdir build && cd build
-  - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-  - make && sudo make install
-  - popd
-  # install UHD from source
-  - git clone git://github.com/EttusResearch/uhd.git
-  - pushd uhd/host
-  - git checkout ${UHD_BRANCH}
-  - mkdir build && cd build
-  - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DENABLE_EXAMPLES=OFF -DENABLE_UTILS=OFF -DENABLE_TESTS=OFF -DENABLE_MANUAL=OFF -DENABLE_DOXYGEN=OFF -DENABLE_MAN_PAGES=OFF -DENABLE_OCTOCLOCK=OFF -DENABLE_USB=OFF -DENABLE_USRP2=OFF -DENABLE_X300=OFF
+  - cmake ../ -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DENABLE_PYTHON=OFF -DENABLE_PYTHON3=OFF
   - make && sudo make install
   - popd
 
