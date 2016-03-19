@@ -1,3 +1,9 @@
+soapyuhd (0.3.1) unstable; urgency=low
+
+  * support changes to property tree API (backwards compatible)
+
+ -- Josh Blum <josh@pothosware.com>  Sat, 19 Mar 2016 11:12:24 -0700
+
 soapyuhd (0.3.0) unstable; urgency=low
 
   * SoapyUHDDevice - implement getSensorInfo() for SoapySDR v0.4

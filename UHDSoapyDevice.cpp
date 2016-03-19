@@ -1,5 +1,10 @@
-// Copyright (c) 2015-2015 Josh Blum
+// Copyright (c) 2015-2016 Josh Blum
 // SPDX-License-Identifier: BSL-1.0
+
+#ifdef UHD_HAS_SET_PUBLISHER
+#define publish set_publisher
+#define subscribe add_desired_subscriber
+#endif
 
 /***********************************************************************
  * A UHD module that supports Soapy devices within the UHD API.

@@ -81,6 +81,17 @@ else()
     message(STATUS "  has set_rx_agc() API")
 endif()
 
+message(STATUS "Checking uhd::property::set_publisher() API...")
+message(STATUS "  Reading ${UHD_INCLUDE_DIRS}/uhd/property_tree.hpp...")
+file(READ ${UHD_INCLUDE_DIRS}/uhd/property_tree.hpp property_tree_hpp)
+string(FIND "${property_tree_hpp}" "set_publisher" has_set_publisher)
+if ("${has_set_publisher}" STREQUAL "-1")
+    message(STATUS "  missing set_publisher() API")
+else()
+    add_definitions(-DUHD_HAS_SET_PUBLISHER)
+    message(STATUS "  has set_publisher() API")
+endif()
+
 ########################################################################
 # Setup boost
 ########################################################################
