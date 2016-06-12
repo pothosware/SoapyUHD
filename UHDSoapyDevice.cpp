@@ -50,11 +50,6 @@ public:
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
-    void set_cmd_time(const uhd::time_spec_t &time)
-    {
-        _device->setCommandTime(time.to_ticks(1e9));
-    }
-
     uhd::time_spec_t get_hardware_time(const std::string &what)
     {
         return uhd::time_spec_t::from_ticks(_device->getHardwareTime(what), 1e9);
@@ -206,7 +201,7 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
 
     //timed command support
     _tree->create<uhd::time_spec_t>(mb_path / "time" / "cmd")
-        .subscribe(boost::bind(&UHDSoapyDevice::set_cmd_time, this, _1));
+        .subscribe(boost::bind(&UHDSoapyDevice::set_hardware_time, this, "CMD", _1));
     _tree->create<double>(mb_path / "tick_rate")
         .publish(boost::bind(&SoapySDR::Device::getMasterClockRate, _device))
         .subscribe(boost::bind(&SoapySDR::Device::setMasterClockRate, _device, _1));

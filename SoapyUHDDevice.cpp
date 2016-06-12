@@ -685,13 +685,15 @@ public:
         uhd::time_spec_t time = uhd::time_spec_t::from_ticks(timeNs, 1e9);
         if (what == "PPS") return _dev->set_time_next_pps(time);
         if (what == "UNKNOWN_PPS") return _dev->set_time_unknown_pps(time);
+        if (what == "CMD" and timeNs == 0) return _dev->clear_command_time();
+        if (what == "CMD") return _dev->set_command_time(time);
         return _dev->set_time_now(time);
     }
 
+    //deprecated call, just forwards to setHardwareTime with CMD arg
     void setCommandTime(const long long timeNs, const std::string &)
     {
-        if (timeNs == 0) _dev->clear_command_time();
-        else _dev->set_command_time(uhd::time_spec_t::from_ticks(timeNs, 1e9));
+        this->setHardwareTime(timeNs, "CMD");
     }
 
     /*******************************************************************
