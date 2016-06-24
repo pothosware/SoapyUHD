@@ -1,37 +1,24 @@
-soapyuhd (0.3.1) unstable; urgency=low
-
-  * support setHardwareTime("CMD"), deprecated setCommandTime()
-  * support changes to property tree API (backwards compatible)
-
- -- Josh Blum <josh@pothosware.com>  Sat, 19 Mar 2016 11:12:24 -0700
-
 soapyuhd (0.3.0) unstable; urgency=low
 
-  * SoapyUHDDevice - implement getSensorInfo() for SoapySDR v0.4
-  * SoapyUHDDevice - implement getStreamArgsInfo() for SoapySDR v0.4
-  * SoapyUHDDevice - implement getNativeStreamFormat() for SoapySDR v0.4
-  * SoapyUHDDevice - implement getStreamFormats() for SoapySDR v0.4
-  * UHDSoapyDevice - use getSensorInfo() for sensors
+  * Release 0.3.0 (2015-11-20)
 
  -- Josh Blum <josh@pothosware.com>  Fri, 23 Oct 2015 21:01:40 -0700
 
 soapyuhd (0.2.0) unstable; urgency=low
 
-  * Hooks for 'has' DC offset mode, DC offset, and IQ balance
-  * Switched to using per-channel and global sensors API
-  * Added GPIO access support for Soapy UHD and vice-versa
+  * Release 0.2.0 (2015-10-10)
 
  -- Josh Blum <josh@pothosware.com>  Sat, 10 Oct 2015 11:16:37 -0700
 
 soapyuhd (0.1.2) unstable; urgency=low
 
-  * Fix metaRangeToNumericList for single element entries
+  * Release 0.1.2 (2015-09-13)
 
  -- Josh Blum <josh@pothosware.com>  Sun, 13 Sep 2015 00:01:42 -0700
 
 soapyuhd (0.1.1) unstable; urgency=low
 
-  * Modifications for ubuntu 12.04 w/ cmake 2.8.7
+  * Release 0.1.1 (2015-08-15)
 
  -- Josh Blum <josh@pothosware.com>  Sat, 15 Aug 2015 11:32:27 -0700
 

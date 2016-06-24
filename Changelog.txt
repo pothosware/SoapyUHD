@@ -1,0 +1,36 @@
+Release 0.3.1 (pending)
+==========================
+
+- support setHardwareTime("CMD"), deprecated setCommandTime()
+- support changes to property tree API (backwards compatible)
+
+Release 0.3.0 (2015-11-20)
+==========================
+
+- SoapyUHDDevice - implement getSensorInfo() for SoapySDR v0.4
+- SoapyUHDDevice - implement getStreamArgsInfo() for SoapySDR v0.4
+- SoapyUHDDevice - implement getNativeStreamFormat() for SoapySDR v0.4
+- SoapyUHDDevice - implement getStreamFormats() for SoapySDR v0.4
+- UHDSoapyDevice - use getSensorInfo() for sensors
+
+Release 0.2.0 (2015-10-10)
+==========================
+
+- Hooks for 'has' DC offset mode, DC offset, and IQ balance
+- Switched to using per-channel and global sensors API
+- Added GPIO access support for Soapy UHD and vice-versa
+
+Release 0.1.2 (2015-09-13)
+==========================
+
+- Fix metaRangeToNumericList for single element entries
+
+Release 0.1.1 (2015-08-15)
+==========================
+
+- Modifications for ubuntu 12.04 w/ cmake 2.8.7
+
+Release 0.1.0 (2015-06-15)
+==========================
+
+- Initial release of Soapy UHD support module
