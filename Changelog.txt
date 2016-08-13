@@ -3,6 +3,7 @@ Release 0.3.1 (pending)
 
 - support setHardwareTime("CMD"), deprecated setCommandTime()
 - support changes to property tree API (backwards compatible)
+- support property tree API changes for uhd v3.10.0
 
 Release 0.3.0 (2015-11-20)
 ==========================
