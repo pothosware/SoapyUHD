@@ -3,7 +3,7 @@ Upstream-Name: soapyuhd
 Source: https://github.com/pothosware/SoapyUHD/wiki
 
 Files: *
-Copyright: 2014-2015 Josh Blum <josh@pothosware.com>
+Copyright: 2014-2016 Josh Blum <josh@pothosware.com>
 License: GPL-3
  On Debian systems, the full text of the GNU General Public
  License version 3 can be found in the file

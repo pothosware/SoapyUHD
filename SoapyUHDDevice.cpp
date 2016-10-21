@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2015 Josh Blum
-// SPDX-License-Identifier: BSL-1.0
+// SPDX-License-Identifier: GPL-3.0
 
 /***********************************************************************
  * A Soapy module that supports UHD devices within the Soapy API.

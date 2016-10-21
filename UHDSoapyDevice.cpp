@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2016 Josh Blum
-// SPDX-License-Identifier: BSL-1.0
+// SPDX-License-Identifier: GPL-3.0
 
 #ifdef UHD_HAS_SET_PUBLISHER
 #define publish set_publisher
