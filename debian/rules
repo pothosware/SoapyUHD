@@ -15,3 +15,11 @@ override_dh_auto_configure:
 
 override_dh_installchangelogs:
 	dh_installchangelogs Changelog.txt
+
+#Note: uhd 3.10 broke the multi-arch module support.
+#The rules file creates a symlink to work around this.
+override_dh_install:
+	mkdir -p $(CURDIR)/debian/tmp/usr/lib/uhd/modules/$(DEB_HOST_MULTIARCH)
+	ln -s /usr/lib/$(DEB_HOST_MULTIARCH)/uhd/modules/libsoapySupport.so \
+		$(CURDIR)/debian/tmp/usr/lib/uhd/modules/$(DEB_HOST_MULTIARCH)/libsoapySupport.so
+	dh_install

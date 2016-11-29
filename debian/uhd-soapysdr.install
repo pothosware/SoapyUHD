@@ -1,1 +1,5 @@
 usr/lib/*/uhd/modules/
+
+#Note: uhd 3.10 broke the multi-arch module support.
+#The rules file creates a symlink to work around this.
+usr/lib/uhd/modules/
