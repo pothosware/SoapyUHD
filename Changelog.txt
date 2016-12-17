@@ -1,6 +1,7 @@
 Release 0.3.2 (pending)
 ==========================
 
+- Added corrections hooks for soapy devices in uhd
 - Symlinks to workaround uhd 3.10 multi-arch bug
 - Minor corrections for license and copyright text
 - Update debian files for SoapySDR module ABI format

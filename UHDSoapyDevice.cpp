@@ -378,6 +378,28 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
         .subscribe(boost::bind(&SoapySDR::Device::setBandwidth, _device, dir, chan, _1));
     _tree->create<uhd::meta_range_t>(rf_fe_path / "bandwidth" / "range")
         .publish(boost::bind(&UHDSoapyDevice::get_bw_range, this, dir, chan));
+
+    //corrections
+    if (_device->hasDCOffsetMode(dir, chan))
+    {
+        _tree->create<bool>(rf_fe_path / "dc_offset" / "enable")
+            .publish(boost::bind(&SoapySDR::Device::getDCOffsetMode, _device, dir, chan))
+            .subscribe(boost::bind(&SoapySDR::Device::setDCOffsetMode, _device, dir, chan, _1));
+    }
+
+    if (_device->hasDCOffset(dir, chan))
+    {
+        _tree->create<std::complex<double>>(rf_fe_path / "dc_offset" / "value")
+            .publish(boost::bind(&SoapySDR::Device::getDCOffset, _device, dir, chan))
+            .subscribe(boost::bind(&SoapySDR::Device::setDCOffset, _device, dir, chan, _1));
+    }
+
+    if (_device->hasIQBalance(dir, chan))
+    {
+        _tree->create<std::complex<double>>(rf_fe_path / "iq_balance" / "value")
+            .publish(boost::bind(&SoapySDR::Device::getIQBalance, _device, dir, chan))
+            .subscribe(boost::bind(&SoapySDR::Device::setIQBalance, _device, dir, chan, _1));
+    }
 }
 
 void UHDSoapyDevice::setupFakeChannelHooks(const int dir, const size_t /*chan*/, const std::string &dirName, const std::string &chName)
