@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2016 Josh Blum
 // SPDX-License-Identifier: GPL-3.0
 
 /***********************************************************************
@@ -37,7 +37,8 @@ public:
         _type(args.at("type")),
         _isNetworkDevice(args.count("addr") != 0)
     {
-        return;
+        if (args.count("rx_subdev") != 0) _dev->set_tx_subdev_spec(args.at("rx_subdev"));
+        if (args.count("tx_subdev") != 0) _dev->set_tx_subdev_spec(args.at("tx_subdev"));
     }
 
     /*******************************************************************
