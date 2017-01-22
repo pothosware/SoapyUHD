@@ -1,3 +1,9 @@
+soapyuhd (0.3.2-1) unstable; urgency=low
+
+  * Release 0.3.2 (2017-01-22)
+
+ -- Josh Blum <josh@pothosware.com>  Sun, 22 Jan 2017 14:54:04 -0800
+
 soapyuhd (0.3.1) unstable; urgency=low
 
   * Release 0.3.1 (2016-08-13)
