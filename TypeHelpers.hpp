@@ -1,8 +1,9 @@
-// Copyright (c) 2014-2015 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: GPL-3.0
 
 #pragma once
 #include <SoapySDR/Types.hpp>
+#include <SoapySDR/Version.hpp> //feature constants
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
@@ -39,7 +40,11 @@ static inline SoapySDR::RangeList metaRangeToRangeList(const uhd::meta_range_t &
     SoapySDR::RangeList out;
     for (size_t i = 0; i < metaRange.size(); i++)
     {
+        #ifdef SOAPY_SDR_API_HAS_RANGE_TYPE_STEP
+        out.push_back(SoapySDR::Range(metaRange[i].start(), metaRange[i].stop(), metaRange[i].step()));
+        #else
         out.push_back(SoapySDR::Range(metaRange[i].start(), metaRange[i].stop()));
+        #endif
     }
     return out;
 }
@@ -49,7 +54,11 @@ static inline uhd::meta_range_t rangeListToMetaRange(const SoapySDR::RangeList &
     uhd::meta_range_t out;
     for (size_t i = 0; i < ranges.size(); i++)
     {
+        #ifdef SOAPY_SDR_API_HAS_RANGE_TYPE_STEP
+        out.push_back(uhd::range_t(ranges[i].minimum(), ranges[i].maximum(), ranges[i].step()));
+        #else
         out.push_back(uhd::range_t(ranges[i].minimum(), ranges[i].maximum()));
+        #endif
     }
     if (out.empty()) out.push_back(uhd::range_t(0.0));
     return out;
@@ -57,7 +66,11 @@ static inline uhd::meta_range_t rangeListToMetaRange(const SoapySDR::RangeList &
 
 static inline SoapySDR::Range metaRangeToRange(const uhd::meta_range_t &metaRange)
 {
+    #ifdef SOAPY_SDR_API_HAS_RANGE_TYPE_STEP
+    return SoapySDR::Range(metaRange.start(), metaRange.stop(), metaRange.step());
+    #else
     return SoapySDR::Range(metaRange.start(), metaRange.stop());
+    #endif
 }
 
 static inline uhd::meta_range_t numberListToMetaRange(const std::vector<double> &nums)
@@ -91,8 +104,13 @@ static inline std::vector<double> metaRangeToNumericList(const uhd::meta_range_t
     return out;
 }
 
-static inline uhd::meta_range_t rangeToMetaRange(const SoapySDR::Range &range, const double step = 0.0)
+static inline uhd::meta_range_t rangeToMetaRange(const SoapySDR::Range &range, double step = 0.0)
 {
+    //when range step is supported, use it only if initialized to non-zero
+    #ifdef SOAPY_SDR_API_HAS_RANGE_TYPE_STEP
+    if (range.step() != 0.0) step = range.step();
+    #endif
+
     return uhd::meta_range_t(range.minimum(), range.maximum(), step);
 }
 
