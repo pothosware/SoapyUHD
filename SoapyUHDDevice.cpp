@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2016 Josh Blum
+// Copyright (c) 2014-2017 Josh Blum
 // SPDX-License-Identifier: GPL-3.0
 
 /***********************************************************************
@@ -839,6 +839,17 @@ std::vector<SoapySDR::Kwargs> find_uhd(const SoapySDR::Kwargs &args_)
     for (size_t i = 0; i < addrs.size(); i++)
     {
         SoapySDR::Kwargs result(dictToKwargs(addrs[i]));
+
+        //create displayable label if not present
+        if (result.count("label") == 0)
+        {
+            if (result.count("product") != 0)
+                result["label"] = result.at("product");
+
+            if (result.count("serial") != 0)
+                result["label"] += " " + result.at("serial");
+        }
+
         result.erase(SOAPY_UHD_NO_DEEPER);
         results.push_back(result);
     }

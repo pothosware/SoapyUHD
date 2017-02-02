@@ -1,6 +1,7 @@
 Release 0.3.3 (pending)
 ==========================
 
+- Added label convention to soapy uhd discovery routine
 - Support for optional gain range step in type conversions
 
 Release 0.3.2 (2017-01-22)
