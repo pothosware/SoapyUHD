@@ -110,6 +110,14 @@ public:
         return numberListToMetaRange(_device->listSampleRates(dir, chan));
     }
 
+    void set_sample_rate(const int dir, const size_t chan, const double rate)
+    {
+        _device->setSampleRate(dir, chan, rate);
+
+        //cache the sample rate for the streamer to use
+        _sampleRates[dir][chan] = _device->getSampleRate(dir, chan);
+    }
+
     uhd::meta_range_t get_gain_range(const int dir, const size_t chan, const std::string &name)
     {
         return rangeToMetaRange(_device->getGainRange(dir, chan, name), MIN_GAIN_STEP);
@@ -153,6 +161,7 @@ public:
 
 private:
     SoapySDR::Device *_device;
+    std::map<int, std::map<size_t, double>> _sampleRates;
 
     //stash streamers to implement old-style issue stream cmd and async message
     std::map<size_t, boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
@@ -301,7 +310,7 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
         .publish(boost::bind(&UHDSoapyDevice::get_rate_range, this, dir, chan));
     _tree->create<double>(dsp_path / "rate" / "value")
         .publish(boost::bind(&SoapySDR::Device::getSampleRate, _device, dir, chan))
-        .subscribe(boost::bind(&SoapySDR::Device::setSampleRate, _device, dir, chan, _1));
+        .subscribe(boost::bind(&UHDSoapyDevice::set_sample_rate, this, dir, chan, _1));
 
     //dsp freq
     _tree->create<double>(dsp_path / "freq" / "value")
@@ -489,11 +498,13 @@ static SoapySDR::Stream *make_stream(SoapySDR::Device *d, const int direction, c
 class UHDSoapyRxStream : public uhd::rx_streamer
 {
 public:
-    UHDSoapyRxStream(SoapySDR::Device *d, const uhd::stream_args_t &args):
+    UHDSoapyRxStream(SoapySDR::Device *d, const uhd::stream_args_t &args, const double &sampRate):
         _device(d),
         _stream(make_stream(d, SOAPY_SDR_RX, args)),
         _nchan(std::max<size_t>(1, args.channels.size())),
-        _elemSize(uhd::convert::get_bytes_per_item(args.cpu_format))
+        _elemSize(uhd::convert::get_bytes_per_item(args.cpu_format)),
+        _nextTimeValid(false),
+        _sampRate(sampRate)
     {
         _offsetBuffs.resize(_nchan);
     }
@@ -568,6 +579,11 @@ public:
             {
                 md.has_time_spec = (flags & SOAPY_SDR_HAS_TIME) != 0;
                 md.time_spec = uhd::time_spec_t::from_ticks(timeNs, 1e9);
+                if (md.has_time_spec)
+                {
+                    _nextTimeValid = true;
+                    _nextTime = md.time_spec;
+                }
             }
 
             //mark end of burst and exit call
@@ -586,6 +602,20 @@ public:
 
             //one pkt mode, end loop
             if (one_packet) break;
+        }
+
+        //time interpolation support
+        if (_sampRate != 0.0 and _nextTimeValid)
+        {
+            //if the metadata does not have a time, use the incremented time
+            if (not md.has_time_spec)
+            {
+                md.has_time_spec = true;
+                md.time_spec = _nextTime;
+            }
+
+            //increment for the next call
+            _nextTime += uhd::time_spec_t::from_ticks(total, _sampRate);
         }
 
         return total;
@@ -631,11 +661,15 @@ private:
     const size_t _elemSize;
     std::vector<void *> _offsetBuffs;
     bool _doErrorOnNextRecv;
+    bool _nextTimeValid;
+    uhd::time_spec_t _nextTime;
+    const double &_sampRate;
 };
 
 uhd::rx_streamer::sptr UHDSoapyDevice::get_rx_stream(const uhd::stream_args_t &args)
 {
-    uhd::rx_streamer::sptr stream(new UHDSoapyRxStream(_device, args));
+    size_t ch = 0; if (not args.channels.empty()) ch = args.channels.front();
+    uhd::rx_streamer::sptr stream(new UHDSoapyRxStream(_device, args, _sampleRates[SOAPY_SDR_RX][ch]));
     BOOST_FOREACH(const size_t ch, args.channels) _rx_streamers[ch] = stream;
     if (args.channels.empty()) _rx_streamers[0] = stream;
     return stream;

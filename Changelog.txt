@@ -1,6 +1,7 @@
 Release 0.3.3 (pending)
 ==========================
 
+- Implement timestamp interpolation for uhd rx streams
 - Added label convention to soapy uhd discovery routine
 - Support for optional gain range step in type conversions
 
