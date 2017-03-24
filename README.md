@@ -1,15 +1,16 @@
 # Soapy SDR plugins for UHD devices
 
-##Build Status
+## Build Status
 
 - Travis: [![Travis Build Status](https://travis-ci.org/pothosware/SoapyUHD.svg?branch=master)](https://travis-ci.org/pothosware/SoapyUHD)
 
-##Dependencies
+## Dependencies
 
 * UHD - https://github.com/EttusResearch/uhd/wiki
 * SoapySDR - https://github.com/pothosware/SoapySDR/wiki
+* boost libraries - http://www.boost.org/
 
-##Documentation
+## Documentation
 
 * https://github.com/pothosware/SoapyUHD/wiki
 
