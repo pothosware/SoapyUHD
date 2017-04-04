@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2016 Josh Blum
+// Copyright (c) 2015-2017 Josh Blum
 // SPDX-License-Identifier: GPL-3.0
 
 #ifdef UHD_HAS_SET_PUBLISHER
@@ -715,7 +715,6 @@ public:
     )
     {
         size_t total = 0;
-        if (nsamps_per_buff == 0) nsamps_per_buff = 1;
         const long long timeNs(md.time_spec.to_ticks(1e9));
 
         while (total < nsamps_per_buff)
