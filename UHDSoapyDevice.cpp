@@ -102,12 +102,20 @@ public:
 
     uhd::meta_range_t get_bw_range(const int dir, const size_t chan)
     {
+        #ifdef SOAPY_SDR_API_HAS_GET_BANDWIDTH_RANGE
+        return rangeListToMetaRange(_device->getBandwidthRange(dir, chan));
+        #else
         return numberListToMetaRange(_device->listBandwidths(dir, chan));
+        #endif
     }
 
     uhd::meta_range_t get_rate_range(const int dir, const size_t chan)
     {
+        #ifdef SOAPY_SDR_API_HAS_GET_SAMPLE_RATE_RANGE
+        return rangeListToMetaRange(_device->getSampleRateRange(dir, chan));
+        #else
         return numberListToMetaRange(_device->listSampleRates(dir, chan));
+        #endif
     }
 
     void set_sample_rate(const int dir, const size_t chan, const double rate)

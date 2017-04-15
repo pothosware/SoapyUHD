@@ -1,6 +1,7 @@
 Release 0.3.3 (pending)
 ==========================
 
+- Support getBandwidthRange()/getSampleRateRange()
 - UHDSoapyDevice supports zero length buffer send()
 - Implement timestamp interpolation for uhd rx streams
 - Added label convention to soapy uhd discovery routine

@@ -602,6 +602,13 @@ public:
         return SoapySDR::Device::listSampleRates(dir, channel);
     }
 
+    SoapySDR::RangeList getSampleRateRange(const int dir, const size_t channel) const
+    {
+        if (dir == SOAPY_SDR_TX) return metaRangeToRangeList(_dev->get_tx_rates(channel));
+        if (dir == SOAPY_SDR_RX) return metaRangeToRangeList(_dev->get_rx_rates(channel));
+        return SoapySDR::Device::getSampleRateRange(dir, channel);
+    }
+
     void setBandwidth(const int dir, const size_t channel, const double bw)
     {
         if (dir == SOAPY_SDR_TX) return _dev->set_tx_bandwidth(bw, channel);
@@ -620,6 +627,13 @@ public:
         if (dir == SOAPY_SDR_TX) return metaRangeToNumericList(_dev->get_tx_bandwidth_range(channel));
         if (dir == SOAPY_SDR_RX) return metaRangeToNumericList(_dev->get_rx_bandwidth_range(channel));
         return SoapySDR::Device::listBandwidths(dir, channel);
+    }
+
+    SoapySDR::RangeList getBandwidthRange(const int dir, const size_t channel) const
+    {
+        if (dir == SOAPY_SDR_TX) return metaRangeToRangeList(_dev->get_tx_bandwidth_range(channel));
+        if (dir == SOAPY_SDR_RX) return metaRangeToRangeList(_dev->get_tx_bandwidth_range(channel));
+        return SoapySDR::Device::getBandwidthRange(dir, channel);
     }
 
     /*******************************************************************
