@@ -37,7 +37,7 @@ public:
         _type(args.at("type")),
         _isNetworkDevice(args.count("addr") != 0)
     {
-        if (args.count("rx_subdev") != 0) _dev->set_tx_subdev_spec(args.at("rx_subdev"));
+        if (args.count("rx_subdev") != 0) _dev->set_rx_subdev_spec(args.at("rx_subdev"));
         if (args.count("tx_subdev") != 0) _dev->set_tx_subdev_spec(args.at("tx_subdev"));
     }
 

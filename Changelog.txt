@@ -1,6 +1,7 @@
 Release 0.3.3 (pending)
 ==========================
 
+- Fix arg for set_rx_subdev_spec() in UHDSoapyDevice
 - Support getBandwidthRange()/getSampleRateRange()
 - UHDSoapyDevice supports zero length buffer send()
 - Implement timestamp interpolation for uhd rx streams
