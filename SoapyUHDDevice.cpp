@@ -539,6 +539,13 @@ public:
 
     double getFrequency(const int dir, const size_t channel, const std::string &name) const
     {
+        //we have never tuned before, return the overall freq for RF, assume 0.0 for all else
+        if (_trCache.count(dir) == 0 or _trCache.at(dir).count(channel) == 0)
+        {
+            if (name == "RF") return this->getFrequency(dir, channel);
+            else return 0.0;
+        }
+
         const uhd::tune_result_t tr = _trCache.at(dir).at(channel);
         if (name == "RF") return tr.actual_rf_freq;
         if (name == "BB") return tr.actual_dsp_freq;
