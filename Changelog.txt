@@ -1,4 +1,4 @@
-Release 0.3.3 (pending)
+Release 0.3.3 (2017-04-29)
 ==========================
 
 - Results for frequency component with no tune result
