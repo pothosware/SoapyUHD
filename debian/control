@@ -13,7 +13,7 @@ Homepage: https://github.com/pothosware/SoapyUHD/wiki
 Vcs-Git: https://github.com/pothosware/SoapyUHD.git
 Vcs-Browser: https://github.com/pothosware/SoapyUHD
 
-Package: soapysdr0.5-2-module-uhd
+Package: soapysdr0.6-module-uhd
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -22,7 +22,7 @@ Description: Soapy UHD - UHD devices for Soapy SDR.
 
 Package: soapysdr-module-uhd
 Architecture: all
-Depends: soapysdr0.5-2-module-uhd, ${misc:Depends}
+Depends: soapysdr0.6-module-uhd, ${misc:Depends}
 Description: Soapy UHD - UHD devices for Soapy SDR.
  A Soapy module that supports UHD devices within the Soapy API.
  .
