@@ -690,18 +690,18 @@ class UHDSoapyTxStream : public uhd::tx_streamer
 {
 public:
     UHDSoapyTxStream(SoapySDR::Device *d, const uhd::stream_args_t &args):
+        _active(false),
         _device(d),
         _stream(make_stream(d, SOAPY_SDR_TX, args)),
         _nchan(std::max<size_t>(1, args.channels.size())),
         _elemSize(uhd::convert::get_bytes_per_item(args.cpu_format))
     {
         _offsetBuffs.resize(_nchan);
-        _device->activateStream(_stream);
     }
 
     ~UHDSoapyTxStream(void)
     {
-        _device->deactivateStream(_stream);
+        if (_active) _device->deactivateStream(_stream);
         _device->closeStream(_stream);
     }
 
@@ -722,6 +722,13 @@ public:
         const double timeout = 0.1
     )
     {
+        //perform activation at the latest/on the first call to send
+        if (not _active)
+        {
+            _device->activateStream(_stream);
+            _active = true;
+        }
+
         size_t total = 0;
         const long long timeNs(md.time_spec.to_ticks(1e9));
 
@@ -736,6 +743,13 @@ public:
             if (ret == SOAPY_SDR_TIMEOUT) break;
             if (ret < 0) throw std::runtime_error(str(boost::format("UHDSoapyTxStream::send() = %d") % ret));
             total += ret;
+        }
+
+        //implement deactivation hook for very last sample consumed on end of burst
+        if (_active and md.end_of_burst and total == nsamps_per_buff)
+        {
+            _device->deactivateStream(_stream);
+            _active = false;
         }
 
         return total;
@@ -793,6 +807,7 @@ public:
     }
 
 private:
+    bool _active;
     SoapySDR::Device *_device;
     SoapySDR::Stream *_stream;
     const size_t _nchan;

@@ -1,3 +1,8 @@
+Release 0.3.4 (pending)
+==========================
+
+- Tx stream activation hooks based on start and end of burst
+
 Release 0.3.3 (2017-04-29)
 ==========================
 
