@@ -15,7 +15,11 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/device.hpp>
 #include <uhd/convert.hpp>
+#ifdef UHD_HAS_MSG_HPP
 #include <uhd/utils/msg.hpp>
+#else
+#include <uhd/utils/log.hpp>
+#endif
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
@@ -835,8 +839,10 @@ bool UHDSoapyDevice::recv_async_msg(uhd::async_metadata_t &md, double timeout)
  **********************************************************************/
 static void UHDSoapyLogger(const SoapySDR::LogLevel logLevel, const char *message)
 {
+    #define component "UHDSoapyDevice"
     switch(logLevel)
     {
+    #ifdef UHD_HAS_MSG_HPP
     case SOAPY_SDR_FATAL:
     case SOAPY_SDR_CRITICAL:
     case SOAPY_SDR_ERROR: UHD_MSG(error) << message << std::endl; break;
@@ -846,6 +852,17 @@ static void UHDSoapyLogger(const SoapySDR::LogLevel logLevel, const char *messag
     case SOAPY_SDR_DEBUG:
     case SOAPY_SDR_TRACE: UHD_MSG(status) << message << std::endl; break;
     case SOAPY_SDR_SSI: UHD_MSG(fastpath) << message << std::flush; break;
+    #else
+    case SOAPY_SDR_FATAL:
+    case SOAPY_SDR_CRITICAL:  UHD_LOG_FATAL(component, message); break;
+    case SOAPY_SDR_ERROR:     UHD_LOG_FATAL(component, message); break;
+    case SOAPY_SDR_WARNING:   UHD_LOG_WARNING(component, message); break;
+    case SOAPY_SDR_NOTICE:
+    case SOAPY_SDR_INFO:      UHD_LOG_INFO(component, message); break;
+    case SOAPY_SDR_DEBUG:
+    case SOAPY_SDR_TRACE:     UHD_LOG_TRACE(component, message); break;
+    case SOAPY_SDR_SSI:       UHD_LOG_FASTPATH(message); break;
+    #endif
     }
 }
 

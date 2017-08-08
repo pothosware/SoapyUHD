@@ -11,7 +11,11 @@
 #include <SoapySDR/Logger.hpp>
 #include <uhd/version.hpp>
 #include <uhd/device.hpp>
+#ifdef UHD_HAS_MSG_HPP
 #include <uhd/utils/msg.hpp>
+#else
+#include <uhd/utils/log_add.hpp>
+#endif
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/property_tree.hpp>
 #include <cctype>
@@ -825,6 +829,7 @@ private:
 /***********************************************************************
  * Register into logger
  **********************************************************************/
+#ifdef UHD_HAS_MSG_HPP
 static void SoapyUHDLogger(uhd::msg::type_t t, const std::string &s)
 {
     if (s.empty()) return;
@@ -837,6 +842,37 @@ static void SoapyUHDLogger(uhd::msg::type_t t, const std::string &s)
     case uhd::msg::fastpath: SoapySDR::log(SOAPY_SDR_SSI, s); break;
     }
 }
+#else
+static void SoapyUHDLogger(const uhd::log::logging_info &info)
+{
+    //build a log message formatted from the information
+    std::string message;
+
+    if (not info.file.empty())
+    {
+        std::string shortfile = info.file.substr(info.file.find_last_of("/\\") + 1);
+        message += "[" + shortfile + ":" + std::to_string(info.line) + "] ";
+    }
+
+    if (not info.component.empty())
+    {
+        message += "[" + info.component + "] ";
+    }
+
+    message += info.message;
+
+    switch(info.verbosity)
+    {
+    case uhd::log::trace:   SoapySDR::log(SOAPY_SDR_TRACE, message); break;
+    case uhd::log::debug:   SoapySDR::log(SOAPY_SDR_DEBUG, message); break;
+    case uhd::log::info:    SoapySDR::log(SOAPY_SDR_INFO, message); break;
+    case uhd::log::warning: SoapySDR::log(SOAPY_SDR_WARNING, message); break;
+    case uhd::log::error:   SoapySDR::log(SOAPY_SDR_ERROR, message); break;
+    case uhd::log::fatal:   SoapySDR::log(SOAPY_SDR_FATAL, message); break;
+    default: break;
+    }
+}
+#endif
 
 /***********************************************************************
  * Registration
@@ -886,7 +922,11 @@ SoapySDR::Device *make_uhd(const SoapySDR::Kwargs &args)
         "Suggestion: install an ABI compatible version of UHD,\n"
         "or rebuild SoapySDR UHD support against this ABI version.\n"
     ) % UHD_VERSION_ABI_STRING % uhd::get_abi_string()));
+    #ifdef UHD_HAS_MSG_HPP
     uhd::msg::register_handler(&SoapyUHDLogger);
+    #else
+    uhd::log::add_logger("SoapyUHDDevice", &SoapyUHDLogger);
+    #endif
     return new SoapyUHDDevice(uhd::usrp::multi_usrp::make(kwargsToDict(args)), args);
 }
 

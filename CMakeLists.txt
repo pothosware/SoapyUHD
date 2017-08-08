@@ -93,6 +93,13 @@ else()
     message(STATUS "  has set_publisher() API")
 endif()
 
+if (EXISTS "${UHD_INCLUDE_DIRS}/uhd/utils/msg.hpp")
+    add_definitions(-DUHD_HAS_MSG_HPP)
+    message(STATUS "  use msg.hpp for logging")
+else()
+    message(STATUS "  use log.hpp for logging")
+endif()
+
 ########################################################################
 # Setup boost
 ########################################################################
