@@ -263,10 +263,14 @@ public:
     {
         SoapyUHDStream *stream = reinterpret_cast<SoapyUHDStream *>(handle);
         if (not stream->rx) return SoapySDR::Device::deactivateStream(handle, flags, timeNs);
-        if (flags != 0) return SOAPY_SDR_NOT_SUPPORTED;
 
-        //stop the stream
-        stream->rx->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+        //stop the stream (stop mode might support a timestamp)
+        uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+        cmd.stream_now = (flags & SOAPY_SDR_HAS_TIME) == 0;
+        cmd.time_spec = uhd::time_spec_t::from_ticks(timeNs, 1e9);
+
+        //issue command
+        stream->rx->issue_stream_cmd(cmd);
         return 0;
     }
 
