@@ -240,7 +240,7 @@ public:
     int activateStream(SoapySDR::Stream *handle, const int flags, const long long timeNs, const size_t numElems)
     {
         SoapyUHDStream *stream = reinterpret_cast<SoapyUHDStream *>(handle);
-        if (not stream->rx) return SoapySDR::Device::activateStream(handle, flags, timeNs, numElems);
+        if (not stream->rx) return 0; //NOP, does nothing, but not an error
 
         //determine stream mode
         uhd::stream_cmd_t::stream_mode_t mode;
@@ -262,7 +262,7 @@ public:
     int deactivateStream(SoapySDR::Stream *handle, const int flags, const long long timeNs)
     {
         SoapyUHDStream *stream = reinterpret_cast<SoapyUHDStream *>(handle);
-        if (not stream->rx) return SoapySDR::Device::deactivateStream(handle, flags, timeNs);
+        if (not stream->rx) return 0; //NOP, does nothing, but not an error
 
         //stop the stream (stop mode might support a timestamp)
         uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);

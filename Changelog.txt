@@ -1,6 +1,7 @@
 Release 0.3.4 (pending)
 ==========================
 
+- Tx de/activateStream() return 0 for NOP, not an error
 - Support timestamp for deactivateStream() stream command
 - Conditional support for new logging API (replaces msg.hpp)
 - Tx stream activation hooks based on start and end of burst
