@@ -1,6 +1,7 @@
 Release 0.3.4 (pending)
 ==========================
 
+- Optional check for dsp freq range in property tree
 - Tx de/activateStream() return 0 for NOP, not an error
 - Support timestamp for deactivateStream() stream command
 - Conditional support for new logging API (replaces msg.hpp)

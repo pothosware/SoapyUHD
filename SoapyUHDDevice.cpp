@@ -588,7 +588,8 @@ public:
             //read the range from the property tree
             uhd::property_tree::sptr tree = _dev->get_device()->get_tree();
             const std::string path = str(boost::format("/mboards/0/%s_dsps/%u/freq/range") % ((dir == SOAPY_SDR_TX)?"tx":"rx") % channel);
-            return metaRangeToRangeList(tree->access<uhd::meta_range_t>(path).get());
+            if (tree->exists(path)) return metaRangeToRangeList(tree->access<uhd::meta_range_t>(path).get());
+            else return SoapySDR::RangeList(1, SoapySDR::Range(-getSampleRate(dir, channel)/2, getSampleRate(dir, channel)/2));
         }
         return SoapySDR::Device::getFrequencyRange(dir, channel, name);
     }
