@@ -37,6 +37,8 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <algorithm>
+
 //Report a positive gain step value for UHD's automatic distribution algorithm.
 //This prevents the gain group rounding algorithm from producing zero values.
 static const double MIN_GAIN_STEP = 0.1;
@@ -296,7 +298,7 @@ void UHDSoapyDevice::setupChannelHooks()
     //We have to build up the same number of TX and RX channels to make UHD
     //happy. If there are less channels in one direction than another, we fill
     //in the direction with dummy channels.
-    const size_t numChannels = (numRxChannels >= numTxChannels) ? numRxChannels : numTxChannels;
+    const size_t numChannels = std::max(numRxChannels, numTxChannels);
 
     for (size_t ch = 0; ch < numChannels; ch++)
     {
