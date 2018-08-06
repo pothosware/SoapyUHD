@@ -1,4 +1,5 @@
 // Copyright (c) 2015-2017 Josh Blum
+// Copyright (c) 2018 Deepwave Digital, Inc.
 // SPDX-License-Identifier: GPL-3.0
 
 #ifdef UHD_HAS_SET_PUBLISHER
@@ -35,6 +36,8 @@
 #include <boost/bind.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/algorithm/string.hpp>
+
+#include <algorithm>
 
 //Report a positive gain step value for UHD's automatic distribution algorithm.
 //This prevents the gain group rounding algorithm from producing zero values.
@@ -151,7 +154,7 @@ public:
         if (stream) stream->issue_stream_cmd(cmd);
     }
 
-    void setupChannelHooks(const int dir);
+    void setupChannelHooks();
     void setupChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName);
     void setupFakeChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName);
 
@@ -276,8 +279,7 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
     }
 
     //setup channel and frontend hooks
-    this->setupChannelHooks(SOAPY_SDR_RX);
-    this->setupChannelHooks(SOAPY_SDR_TX);
+    this->setupChannelHooks();
 }
 
 UHDSoapyDevice::~UHDSoapyDevice(void)
@@ -286,17 +288,31 @@ UHDSoapyDevice::~UHDSoapyDevice(void)
     SoapySDR::Device::unmake(_device);
 }
 
-void UHDSoapyDevice::setupChannelHooks(const int dir)
+void UHDSoapyDevice::setupChannelHooks()
 {
-    const std::string dirName((dir==SOAPY_SDR_RX)?"rx":"tx");
-    for (size_t ch = 0; ch < _device->getNumChannels(dir); ch++)
+    static const std::string kRxDirName = "rx";
+    static const std::string kTxDirName = "tx";
+    const size_t numRxChannels = _device->getNumChannels(SOAPY_SDR_RX);
+    const size_t numTxChannels = _device->getNumChannels(SOAPY_SDR_TX);
+
+    //We have to build up the same number of TX and RX channels to make UHD
+    //happy. If there are less channels in one direction than another, we fill
+    //in the direction with dummy channels.
+    const size_t numChannels = std::max(numRxChannels, numTxChannels);
+
+    for (size_t ch = 0; ch < numChannels; ch++)
     {
         const std::string chName(boost::lexical_cast<std::string>(ch));
-        this->setupChannelHooks(dir, ch, dirName, chName);
-    }
+        if (ch < numRxChannels)
+            this->setupChannelHooks(SOAPY_SDR_RX, ch, kRxDirName, chName);
+        else
+            this->setupFakeChannelHooks(SOAPY_SDR_RX, ch, kRxDirName, chName);
 
-    //cant have a completely empty direction for apps to work
-    if (_device->getNumChannels(dir) == 0) this->setupFakeChannelHooks(dir, 0, dirName, "0");
+        if (ch < numTxChannels)
+            this->setupChannelHooks(SOAPY_SDR_TX, ch, kTxDirName, chName);
+        else
+            this->setupFakeChannelHooks(SOAPY_SDR_TX, ch, kTxDirName, chName);
+    }
 }
 
 void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const std::string &dirName, const std::string &chName)
