@@ -164,6 +164,9 @@ install(TARGETS soapySupport
     DESTINATION ${UHD_ROOT}/lib${LIB_SUFFIX}/uhd/modules
 )
 
+#using C++11 features for this uhd module
+set_target_properties(soapySupport PROPERTIES CXX_STANDARD 11)
+
 ########################################################################
 # Print Summary
 ########################################################################
