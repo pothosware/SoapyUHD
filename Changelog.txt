@@ -1,4 +1,4 @@
-Release 0.3.5 (pending)
+Release 0.3.5 (2018-12-07)
 ==========================
 
 - Create fake channels if the number of TX and RX channels
