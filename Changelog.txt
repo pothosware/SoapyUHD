@@ -1,3 +1,9 @@
+Release 0.3.6 (pending)
+==========================
+
+- Support tuning on boards without a CORDIC in the DSP
+  by registering a dummy second tuning element
+
 Release 0.3.5 (2018-12-07)
 ==========================
 

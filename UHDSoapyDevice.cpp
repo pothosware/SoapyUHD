@@ -331,7 +331,7 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
     //names of the tunable components
     const std::vector<std::string> comps = _device->listFrequencies(dir, chan);
     const std::string rfCompName = (comps.size()>0)?comps.at(0):"RF";
-    const std::string bbCompName = (comps.size()>1)?comps.at(1):"BB";
+    const std::string bbCompName = (comps.size()>1)?comps.at(1):"";
 
     //samp rate
     _tree->create<uhd::meta_range_t>(dsp_path / "rate" / "range")
@@ -340,12 +340,21 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
         .publish(boost::bind(&SoapySDR::Device::getSampleRate, _device, dir, chan))
         .subscribe(boost::bind(&UHDSoapyDevice::set_sample_rate, this, dir, chan, _1));
 
+    //dsp freq (when there is no tunable cordic)
+    if (bbCompName.empty())
+    {
+        _tree->create<double>(dsp_path / "freq" / "value").set(0.0);
+        _tree->create<uhd::meta_range_t>(dsp_path / "freq" / "range").set(uhd::meta_range_t());
+    }
     //dsp freq
-    _tree->create<double>(dsp_path / "freq" / "value")
-        .publish(boost::bind(&SoapySDR::Device::getFrequency, _device, dir, chan, bbCompName))
-        .subscribe(boost::bind(&UHDSoapyDevice::set_frequency, this, dir, chan, bbCompName, _1));
-    _tree->create<uhd::meta_range_t>(dsp_path / "freq" / "range")
-        .publish(boost::bind(&UHDSoapyDevice::get_freq_range, this, dir, chan, bbCompName));
+    else
+    {
+        _tree->create<double>(dsp_path / "freq" / "value")
+            .publish(boost::bind(&SoapySDR::Device::getFrequency, _device, dir, chan, bbCompName))
+            .subscribe(boost::bind(&UHDSoapyDevice::set_frequency, this, dir, chan, bbCompName, _1));
+        _tree->create<uhd::meta_range_t>(dsp_path / "freq" / "range")
+            .publish(boost::bind(&UHDSoapyDevice::get_freq_range, this, dir, chan, bbCompName));
+    }
 
     //old style stream cmd
     if (dir == SOAPY_SDR_RX)
