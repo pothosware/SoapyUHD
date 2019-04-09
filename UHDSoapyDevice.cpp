@@ -344,7 +344,7 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
     if (bbCompName.empty())
     {
         _tree->create<double>(dsp_path / "freq" / "value").set(0.0);
-        _tree->create<uhd::meta_range_t>(dsp_path / "freq" / "range").set(uhd::meta_range_t());
+        _tree->create<uhd::meta_range_t>(dsp_path / "freq" / "range").set(uhd::meta_range_t(0.0, 0.0));
     }
     //dsp freq
     else
