@@ -1,4 +1,4 @@
-Release 0.3.6 (pending)
+Release 0.3.6 (2019-06-22)
 ==========================
 
 - Support tuning on boards without a CORDIC in the DSP
