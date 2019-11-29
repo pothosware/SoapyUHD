@@ -1,4 +1,5 @@
 // Copyright (c) 2014-2017 Josh Blum
+//                    2019 Nicholas Corgan
 // SPDX-License-Identifier: GPL-3.0
 
 /***********************************************************************
@@ -422,6 +423,27 @@ public:
         if (dir == SOAPY_SDR_TX) return _dev->get_tx_gain_names(channel);
         if (dir == SOAPY_SDR_RX) return _dev->get_rx_gain_names(channel);
         return SoapySDR::Device::listGains(dir, channel);
+    }
+
+    bool hasGainMode(const int dir, const size_t channel) const
+    {
+        #ifdef UHD_HAS_SET_RX_AGC
+        if (dir == SOAPY_SDR_TX) return false;
+        if (dir == SOAPY_SDR_RX)
+        {
+            auto tree = _dev->get_device()->get_tree();
+            auto subdevSpec = _dev->get_rx_subdev_spec(0);
+            assert(!subdevSpec.empty());
+
+            const std::string path =
+                str(boost::format("/mboards/0/dboards/%s/rx_frontends/%s/gain/agc/enable")
+                    % subdevSpec[0].db_name
+                    % subdevSpec[0].sd_name);
+
+            return tree->exists(path);
+        }
+        #endif
+        return SoapySDR::Device::hasGainMode(dir, channel);
     }
 
     void setGainMode(const int dir, const size_t channel, const bool automatic)
