@@ -918,6 +918,11 @@ static uhd::device_addrs_t findUHDSoapyDevice(const uhd::device_addr_t &args_)
         found.erase(SOAPY_UHD_NO_DEEPER);
         result.push_back(kwargsToDict(found));
         result.back()["type"] = "soapy";
+        if (found.count("serial") == 0)
+        {
+            auto serial = std::hash<std::string>()(SoapySDR::KwargsToString(found));
+            result.back()["serial"] = std::to_string(serial);
+        }
     }
     return result;
 }
