@@ -446,6 +446,15 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
             .publish(boost::bind(&SoapySDR::Device::getIQBalance, _device, dir, chan))
             .subscribe(boost::bind(&SoapySDR::Device::setIQBalance, _device, dir, chan, _1));
     }
+
+    #ifdef SOAPY_SDR_API_HAS_IQ_BALANCE_MODE
+    if (_device->hasIQBalanceMode(dir, chan))
+    {
+        _tree->create<bool>(rf_fe_path / "iq_balance" / "enable")
+            .publish(boost::bind(&SoapySDR::Device::getIQBalanceMode, _device, dir, chan))
+            .subscribe(boost::bind(&SoapySDR::Device::setIQBalanceMode, _device, dir, chan, _1));
+    }
+    #endif
 }
 
 void UHDSoapyDevice::setupFakeChannelHooks(const int dir, const size_t /*chan*/, const std::string &dirName, const std::string &chName)
