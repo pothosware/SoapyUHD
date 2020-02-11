@@ -376,11 +376,19 @@ public:
     /*******************************************************************
      * Frontend corrections support
      ******************************************************************/
-    bool hasDCOffsetMode(const int dir, const size_t) const
+
+    bool hasDCOffsetMode(const int dir, const size_t channel) const
     {
-        //since we don't have a way to really query this,
-        //assume that DC offset removal is always supported on RX
-        return (dir == SOAPY_SDR_RX);
+        if (dir == SOAPY_SDR_TX) return false;
+        if (dir == SOAPY_SDR_RX)
+        {
+            // This is usually on the motherboard's layer, but for some devices
+            // (ex. the B2XX), it is done on the RF frontend.
+            return __doesMBoardFEPropTreeEntryExist(dir, channel, "dc_offset/enable") ||
+                   __doesDBoardFEPropTreeEntryExist(dir, channel, "dc_offset/enable");
+        }
+
+        return SoapySDR::Device::hasDCOffsetMode(dir, channel);
     }
 
     void setDCOffsetMode(const int dir, const size_t channel, const bool automatic)
@@ -388,11 +396,35 @@ public:
         if (dir == SOAPY_SDR_RX) _dev->set_rx_dc_offset(automatic, channel);
     }
 
-    bool hasDCOffset(const int, const size_t) const
+    bool getDCOffsetMode(const int dir, const size_t channel) const
     {
-        //since we don't have a way to really query this,
-        //assume that DC offset is always supported
-        return true;
+        // multi_usrp has no getter for this, so we need to query the
+        // property tree itself.
+        if (dir == SOAPY_SDR_TX) return false;
+        if((dir == SOAPY_SDR_RX) && this->hasDCOffsetMode(dir, channel))
+        {
+            auto tree = _dev->get_device()->get_tree();
+            const std::string subpath = "/dc_offset/enable";
+
+            auto mboardPath = __getMBoardFEPropTreePath(dir, channel) + subpath;
+            if(tree->exists(mboardPath))
+            {
+                return tree->access<bool>(mboardPath).get();
+            }
+
+            auto dboardPath = __getDBoardFEPropTreePath(dir, channel) + subpath;
+            if(tree->exists(dboardPath))
+            {
+                return tree->access<bool>(dboardPath).get();
+            }
+        }
+
+        return SoapySDR::Device::getDCOffsetMode(dir, channel);
+    }
+
+    bool hasDCOffset(const int dir, const size_t channel) const
+    {
+        return __doesMBoardFEPropTreeEntryExist(dir, channel, "dc_offset/value");
     }
 
     void setDCOffset(const int dir, const size_t channel, const std::complex<double> &offset)
@@ -401,17 +433,82 @@ public:
         if (dir == SOAPY_SDR_RX) _dev->set_rx_dc_offset(offset, channel);
     }
 
-    bool hasIQBalance(const int, const size_t) const
+    std::complex<double> getDCOffset(const int dir, const size_t channel) const
     {
-        //since we don't have a way to really query this,
-        //assume that IQ balance is always supported
-        return true;
+        // multi_usrp has no getter for this, so we need to query the
+        // property tree itself.
+        if(this->hasDCOffset(dir, channel))
+        {
+            auto tree = _dev->get_device()->get_tree();
+            const std::string subpath = "/dc_offset/value";
+
+            auto path = __getMBoardFEPropTreePath(dir, channel) + subpath;
+            return tree->access<std::complex<double>>(path).get();
+        }
+
+        return SoapySDR::Device::getDCOffset(dir, channel);
+    }
+
+    bool hasIQBalance(const int dir, const size_t channel) const
+    {
+        return __doesMBoardFEPropTreeEntryExist(dir, channel, "iq_balance/value");
     }
 
     void setIQBalance(const int dir, const size_t channel, const std::complex<double> &balance)
     {
         if (dir == SOAPY_SDR_TX) _dev->set_tx_iq_balance(balance, channel);
         if (dir == SOAPY_SDR_RX) _dev->set_rx_iq_balance(balance, channel);
+    }
+
+    std::complex<double> getIQBalance(const int dir, const size_t channel) const
+    {
+        // multi_usrp has no getter for this, so we need to query the
+        // property tree itself.
+        if(this->hasIQBalance(dir, channel))
+        {
+            auto tree = _dev->get_device()->get_tree();
+            const std::string subpath = "/iq_balance/value";
+
+            auto path = __getMBoardFEPropTreePath(dir, channel) + subpath;
+            return tree->access<std::complex<double>>(path).get();
+        }
+
+        return SoapySDR::Device::getIQBalance(dir, channel);
+    }
+
+    bool hasIQBalanceMode(const int dir, const size_t channel) const
+    {
+        if (dir == SOAPY_SDR_TX) return false;
+        if (dir == SOAPY_SDR_RX)
+        {
+            return __doesMBoardFEPropTreeEntryExist(dir, channel, "iq_balance/enable");
+        }
+
+        return SoapySDR::Device::hasDCOffsetMode(dir, channel);
+    }
+
+    void setIQBalanceMode(const int dir, const size_t channel, const bool automatic)
+    {
+        if (dir == SOAPY_SDR_RX) _dev->set_rx_iq_balance(automatic, channel);
+
+        return SoapySDR::Device::setIQBalanceMode(dir, channel, automatic);
+    }
+
+    bool getIQBalanceMode(const int dir, const size_t channel) const
+    {
+        // multi_usrp has no getter for this, so we need to query the
+        // property tree itself.
+        if (dir == SOAPY_SDR_TX) return false;
+        if((dir == SOAPY_SDR_RX) && this->hasIQBalanceMode(dir, channel))
+        {
+            auto tree = _dev->get_device()->get_tree();
+            const std::string subpath = "/iq_balance/enable";
+
+            auto path = __getMBoardFEPropTreePath(dir, channel) + subpath;
+            return tree->access<bool>(path).get();
+        }
+
+        return SoapySDR::Device::getIQBalanceMode(dir, channel);
     }
 
     /*******************************************************************
@@ -431,16 +528,7 @@ public:
         if (dir == SOAPY_SDR_TX) return false;
         if (dir == SOAPY_SDR_RX)
         {
-            auto tree = _dev->get_device()->get_tree();
-            auto subdevSpec = _dev->get_rx_subdev_spec(0);
-            assert(!subdevSpec.empty());
-
-            const std::string path =
-                str(boost::format("/mboards/0/dboards/%s/rx_frontends/%s/gain/agc/enable")
-                    % subdevSpec[0].db_name
-                    % subdevSpec[0].sd_name);
-
-            return tree->exists(path);
+            return __doesDBoardFEPropTreeEntryExist(dir, channel, "gain/agc/enable");
         }
         #endif
         return SoapySDR::Device::hasGainMode(dir, channel);
@@ -845,6 +933,55 @@ public:
     unsigned readGPIODir(const std::string &bank) const
     {
         return _dev->get_gpio_attr(bank, "DDR");
+    }
+
+    /*******************************************************************
+     * Helpers for searching property tree
+     ******************************************************************/
+
+    std::string __getMBoardFEPropTreePath(const int dir, const size_t channel) const
+    {
+        auto tree = _dev->get_device()->get_tree();
+        const std::string directionName = (dir == SOAPY_SDR_TX) ? "tx" : "rx";
+        auto subdevSpec = (dir == SOAPY_SDR_TX) ? _dev->get_tx_subdev_spec(0).at(channel)
+                                                : _dev->get_rx_subdev_spec(0).at(channel);
+
+        const std::string path =
+            str(boost::format("/mboards/0/%s_frontends/%s")
+                % directionName
+                % subdevSpec.db_name);
+
+        return path;
+    }
+
+    std::string __getDBoardFEPropTreePath(const int dir, const size_t channel) const
+    {
+        auto tree = _dev->get_device()->get_tree();
+        const std::string directionName = (dir == SOAPY_SDR_TX) ? "tx" : "rx";
+        auto subdevSpec = (dir == SOAPY_SDR_TX) ? _dev->get_tx_subdev_spec(0).at(channel)
+                                                : _dev->get_rx_subdev_spec(0).at(channel);
+
+        const std::string path =
+            str(boost::format("/mboards/0/dboards/%s/%s_frontends/%s")
+                % subdevSpec.db_name
+                % directionName
+                % subdevSpec.sd_name);
+
+        return path;
+    }
+
+    bool __doesMBoardFEPropTreeEntryExist(const int dir, const size_t channel, const std::string &subpath) const
+    {
+        auto path = __getMBoardFEPropTreePath(dir, channel) + "/" + subpath;
+
+        return _dev->get_device()->get_tree()->exists(path);
+    }
+
+    bool __doesDBoardFEPropTreeEntryExist(const int dir, const size_t channel, const std::string &subpath) const
+    {
+        auto path = __getDBoardFEPropTreePath(dir, channel) + "/" + subpath;
+
+        return _dev->get_device()->get_tree()->exists(path);
     }
 
 private:
