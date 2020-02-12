@@ -65,7 +65,7 @@ public:
         for (size_t i = 0; i < this->getNumChannels(SOAPY_SDR_TX); i++)
         {
             const uhd::dict<std::string, std::string> info = _dev->get_usrp_tx_info(i);
-            BOOST_FOREACH (const std::string &key, info.keys())
+            for (const std::string &key : info.keys())
             {
                 if (key.size() > 3 and key.substr(0, 3) == "tx_")
                     out[str(boost::format("tx%d_%s") % i % key.substr(3))] = info[key];
@@ -75,7 +75,7 @@ public:
         for (size_t i = 0; i < this->getNumChannels(SOAPY_SDR_RX); i++)
         {
             const uhd::dict<std::string, std::string> info = _dev->get_usrp_rx_info(i);
-            BOOST_FOREACH (const std::string &key, info.keys())
+            for (const std::string &key : info.keys())
             {
                 if (key.size() > 3 and key.substr(0, 3) == "rx_")
                     out[str(boost::format("rx%d_%s") % i % key.substr(3))] = info[key];
@@ -202,7 +202,7 @@ public:
     SoapySDR::Stream *setupStream(const int dir, const std::string &format, const std::vector<size_t> &channels, const SoapySDR::Kwargs &args)
     {
         std::string hostFormat;
-        BOOST_FOREACH(const char ch, format)
+        for(const char ch : format)
         {
             if (ch == 'C') hostFormat += "c";
             else if (ch == 'F') hostFormat = "f" + hostFormat;
@@ -490,8 +490,6 @@ public:
     void setIQBalanceMode(const int dir, const size_t channel, const bool automatic)
     {
         if (dir == SOAPY_SDR_RX) _dev->set_rx_iq_balance(automatic, channel);
-
-        return SoapySDR::Device::setIQBalanceMode(dir, channel, automatic);
     }
 
     bool getIQBalanceMode(const int dir, const size_t channel) const
@@ -508,7 +506,7 @@ public:
             return tree->access<bool>(path).get();
         }
 
-        return SoapySDR::Device::getIQBalanceMode(dir, channel);
+        return false;
     }
 
     /*******************************************************************
