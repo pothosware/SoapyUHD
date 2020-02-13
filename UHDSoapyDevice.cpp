@@ -14,6 +14,7 @@
 #include "TypeHelpers.hpp"
 #include <uhd/utils/static.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/version.hpp>
 #include <uhd/device.hpp>
 #include <uhd/convert.hpp>
 #ifdef UHD_HAS_MSG_HPP
@@ -150,7 +151,7 @@ public:
 
     void old_issue_stream_cmd(const size_t chan, const uhd::stream_cmd_t &cmd)
     {
-        uhd::rx_streamer::sptr stream = _rx_streamers[chan].lock();
+        auto stream = _rx_streamers[chan].lock();
         if (stream) stream->issue_stream_cmd(cmd);
     }
 
@@ -179,8 +180,13 @@ private:
     std::map<int, std::map<size_t, double>> _sampleRates;
 
     //stash streamers to implement old-style issue stream cmd and async message
+    #if UHD_VERSION > 4000000
+    std::map<size_t, std::weak_ptr<uhd::rx_streamer> > _rx_streamers;
+    std::map<size_t, std::weak_ptr<uhd::tx_streamer> > _tx_streamers;
+    #else
     std::map<size_t, boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
     std::map<size_t, boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
+    #endif
 };
 
 /***********************************************************************
@@ -212,7 +218,7 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
     //mb eeprom filled with hardware info
     uhd::usrp::mboard_eeprom_t mb_eeprom;
     const uhd::device_addr_t hardware_info(kwargsToDict(_device->getHardwareInfo()));
-    BOOST_FOREACH(const std::string &key, hardware_info.keys()) mb_eeprom[key] = hardware_info[key];
+    for(const std::string &key : hardware_info.keys()) mb_eeprom[key] = hardware_info[key];
     _tree->create<uhd::usrp::mboard_eeprom_t>(mb_path / "eeprom").set(mb_eeprom);
 
     //the frontend mapping
@@ -252,14 +258,14 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
 
     //mboard sensors
     _tree->create<int>(mb_path / "sensors"); //ensure this path exists
-    BOOST_FOREACH(const std::string &name, _device->listSensors())
+    for(const std::string &name : _device->listSensors())
     {
         _tree->create<uhd::sensor_value_t>(mb_path / "sensors" / name)
             .publish(boost::bind(&UHDSoapyDevice::get_mboard_sensor, this, name));
     }
 
     //gpio banks
-    BOOST_FOREACH(const std::string &bank, _device->listGPIOBanks())
+    for(const std::string &bank : _device->listGPIOBanks())
     {
         std::vector<std::string> attrs;
         attrs.push_back("CTRL");
@@ -270,7 +276,7 @@ UHDSoapyDevice::UHDSoapyDevice(const uhd::device_addr_t &args)
         attrs.push_back("ATR_TX");
         attrs.push_back("ATR_XX");
         attrs.push_back("READBACK");
-        BOOST_FOREACH(const std::string &attr, attrs)
+        for(const std::string &attr : attrs)
         {
             _tree->create<boost::uint32_t>(mb_path / "gpio" / bank / attr)
                 .subscribe(boost::bind(&UHDSoapyDevice::set_gpio_attr, this, bank, attr, _1))
@@ -365,7 +371,7 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
 
     //frontend sensors
     _tree->create<int>(rf_fe_path / "sensors"); //ensure this path exists
-    BOOST_FOREACH(const std::string &name, _device->listSensors(dir, chan))
+    for(const std::string &name : _device->listSensors(dir, chan))
     {
         //install the sensor
         _tree->create<uhd::sensor_value_t>(rf_fe_path / "sensors" / name)
@@ -387,7 +393,7 @@ void UHDSoapyDevice::setupChannelHooks(const int dir, const size_t chan, const s
     }
 
     //gains
-    BOOST_FOREACH(const std::string &name, _device->listGains(dir, chan))
+    for(const std::string &name : _device->listGains(dir, chan))
     {
         _tree->create<uhd::meta_range_t>(rf_fe_path / "gains" / name / "range")
             .publish(boost::bind(&UHDSoapyDevice::get_gain_range, this, dir, chan, name));
@@ -529,7 +535,7 @@ static SoapySDR::Stream *make_stream(SoapySDR::Device *d, const int direction, c
 
     //the format string
     std::string hostFormat;
-    BOOST_FOREACH(const char ch, args.cpu_format)
+    for(const char ch : args.cpu_format)
     {
         if (ch == 'c') hostFormat = "C" + hostFormat;
         else if (ch == 'f') hostFormat += "F";
@@ -716,7 +722,7 @@ uhd::rx_streamer::sptr UHDSoapyDevice::get_rx_stream(const uhd::stream_args_t &a
 {
     size_t ch = 0; if (not args.channels.empty()) ch = args.channels.front();
     uhd::rx_streamer::sptr stream(new UHDSoapyRxStream(_device, args, _sampleRates[SOAPY_SDR_RX][ch]));
-    BOOST_FOREACH(const size_t ch, args.channels) _rx_streamers[ch] = stream;
+    for(const size_t ch : args.channels) _rx_streamers[ch] = stream;
     if (args.channels.empty()) _rx_streamers[0] = stream;
     return stream;
 }
@@ -856,14 +862,14 @@ private:
 uhd::tx_streamer::sptr UHDSoapyDevice::get_tx_stream(const uhd::stream_args_t &args)
 {
     uhd::tx_streamer::sptr stream(new UHDSoapyTxStream(_device, args));
-    BOOST_FOREACH(const size_t ch, args.channels) _tx_streamers[ch] = stream;
+    for(const size_t ch : args.channels) _tx_streamers[ch] = stream;
     if (args.channels.empty()) _tx_streamers[0] = stream;
     return stream;
 }
 
 bool UHDSoapyDevice::recv_async_msg(uhd::async_metadata_t &md, double timeout)
 {
-    uhd::tx_streamer::sptr stream = _tx_streamers[0].lock();
+    auto stream = _tx_streamers[0].lock();
     if (not stream) return false;
     return stream->recv_async_msg(md, timeout);
 }
@@ -922,7 +928,7 @@ static uhd::device_addrs_t findUHDSoapyDevice(const uhd::device_addr_t &args_)
     if (args.count("type") != 0 and args.at("type") != "soapy") return uhd::device_addrs_t();
 
     uhd::device_addrs_t result;
-    BOOST_FOREACH(SoapySDR::Kwargs found, SoapySDR::Device::enumerate(args))
+    for(SoapySDR::Kwargs found : SoapySDR::Device::enumerate(args))
     {
         found.erase(SOAPY_UHD_NO_DEEPER);
         result.push_back(kwargsToDict(found));
