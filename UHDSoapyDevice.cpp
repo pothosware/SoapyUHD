@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2017 Josh Blum
+// Copyright (c) 2015-2020 Josh Blum
 // Copyright (c) 2018 Deepwave Digital, Inc.
 // SPDX-License-Identifier: GPL-3.0
 
@@ -180,7 +180,7 @@ private:
     std::map<int, std::map<size_t, double>> _sampleRates;
 
     //stash streamers to implement old-style issue stream cmd and async message
-    #if UHD_VERSION > 4000000
+    #if UHD_VERSION >= 4000000
     std::map<size_t, std::weak_ptr<uhd::rx_streamer> > _rx_streamers;
     std::map<size_t, std::weak_ptr<uhd::tx_streamer> > _tx_streamers;
     #else
