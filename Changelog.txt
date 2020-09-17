@@ -1,3 +1,8 @@
+Release 0.4.0 (pending)
+==========================
+
+- Support for compilation with UHD 4.0 release
+
 Release 0.3.6 (2019-06-22)
 ==========================
 
