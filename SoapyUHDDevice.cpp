@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2017 Josh Blum
-//                    2019 Nicholas Corgan
+//               2019-2020 Nicholas Corgan
 // SPDX-License-Identifier: GPL-3.0
 
 /***********************************************************************
@@ -931,6 +931,15 @@ public:
     unsigned readGPIODir(const std::string &bank) const
     {
         return _dev->get_gpio_attr(bank, "DDR");
+    }
+
+    /*******************************************************************
+     * Get handle to underlying device
+     ******************************************************************/
+
+    void* getNativeDeviceHandle(void) const
+    {
+        return _dev.get();
     }
 
     /*******************************************************************
