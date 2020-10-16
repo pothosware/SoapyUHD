@@ -39,6 +39,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <algorithm>
+#include <cctype>
 
 //Report a positive gain step value for UHD's automatic distribution algorithm.
 //This prevents the gain group rounding algorithm from producing zero values.
