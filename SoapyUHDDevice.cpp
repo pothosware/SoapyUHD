@@ -756,7 +756,7 @@ public:
     SoapySDR::RangeList getBandwidthRange(const int dir, const size_t channel) const
     {
         if (dir == SOAPY_SDR_TX) return metaRangeToRangeList(_dev->get_tx_bandwidth_range(channel));
-        if (dir == SOAPY_SDR_RX) return metaRangeToRangeList(_dev->get_tx_bandwidth_range(channel));
+        if (dir == SOAPY_SDR_RX) return metaRangeToRangeList(_dev->get_rx_bandwidth_range(channel));
         return SoapySDR::Device::getBandwidthRange(dir, channel);
     }
 
