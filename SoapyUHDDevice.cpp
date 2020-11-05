@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2017 Josh Blum
+// Copyright (c) 2014-2020 Josh Blum
 //               2019-2020 Nicholas Corgan
 // SPDX-License-Identifier: GPL-3.0
 
@@ -19,6 +19,7 @@
 #endif
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/version.hpp>
 #include <cctype>
 #include <iostream>
 
@@ -83,7 +84,7 @@ public:
             }
         }
 
-        uhd::property_tree::sptr tree = _dev->get_device()->get_tree();
+        uhd::property_tree::sptr tree = _get_tree();
         if (tree->exists("/mboards/0/fw_version")) out["fw_version"] = tree->access<std::string>("/mboards/0/fw_version").get();
         if (tree->exists("/mboards/0/fpga_version")) out["fpga_version"] = tree->access<std::string>("/mboards/0/fpga_version").get();
 
@@ -403,7 +404,7 @@ public:
         if (dir == SOAPY_SDR_TX) return false;
         if((dir == SOAPY_SDR_RX) && this->hasDCOffsetMode(dir, channel))
         {
-            auto tree = _dev->get_device()->get_tree();
+            auto tree = _get_tree();
             const std::string subpath = "/dc_offset/enable";
 
             auto mboardPath = __getMBoardFEPropTreePath(dir, channel) + subpath;
@@ -439,7 +440,7 @@ public:
         // property tree itself.
         if(this->hasDCOffset(dir, channel))
         {
-            auto tree = _dev->get_device()->get_tree();
+            auto tree = _get_tree();
             const std::string subpath = "/dc_offset/value";
 
             auto path = __getMBoardFEPropTreePath(dir, channel) + subpath;
@@ -466,7 +467,7 @@ public:
         // property tree itself.
         if(this->hasIQBalance(dir, channel))
         {
-            auto tree = _dev->get_device()->get_tree();
+            auto tree = _get_tree();
             const std::string subpath = "/iq_balance/value";
 
             auto path = __getMBoardFEPropTreePath(dir, channel) + subpath;
@@ -499,7 +500,7 @@ public:
         if (dir == SOAPY_SDR_TX) return false;
         if((dir == SOAPY_SDR_RX) && this->hasIQBalanceMode(dir, channel))
         {
-            auto tree = _dev->get_device()->get_tree();
+            auto tree = _get_tree();
             const std::string subpath = "/iq_balance/enable";
 
             auto path = __getMBoardFEPropTreePath(dir, channel) + subpath;
@@ -694,7 +695,7 @@ public:
         if (name == "BB")
         {
             //read the range from the property tree
-            uhd::property_tree::sptr tree = _dev->get_device()->get_tree();
+            uhd::property_tree::sptr tree = _get_tree();
             const std::string path = str(boost::format("/mboards/0/%s_dsps/%u/freq/range") % ((dir == SOAPY_SDR_TX)?"tx":"rx") % channel);
             if (tree->exists(path)) return metaRangeToRangeList(tree->access<uhd::meta_range_t>(path).get());
             else return SoapySDR::RangeList(1, SoapySDR::Range(-getSampleRate(dir, channel)/2, getSampleRate(dir, channel)/2));
@@ -948,7 +949,7 @@ public:
 
     std::string __getMBoardFEPropTreePath(const int dir, const size_t channel) const
     {
-        auto tree = _dev->get_device()->get_tree();
+        auto tree = _get_tree();
         const std::string directionName = (dir == SOAPY_SDR_TX) ? "tx" : "rx";
         auto subdevSpec = (dir == SOAPY_SDR_TX) ? _dev->get_tx_subdev_spec(0).at(channel)
                                                 : _dev->get_rx_subdev_spec(0).at(channel);
@@ -963,7 +964,7 @@ public:
 
     std::string __getDBoardFEPropTreePath(const int dir, const size_t channel) const
     {
-        auto tree = _dev->get_device()->get_tree();
+        auto tree = _get_tree();
         const std::string directionName = (dir == SOAPY_SDR_TX) ? "tx" : "rx";
         auto subdevSpec = (dir == SOAPY_SDR_TX) ? _dev->get_tx_subdev_spec(0).at(channel)
                                                 : _dev->get_rx_subdev_spec(0).at(channel);
@@ -981,17 +982,27 @@ public:
     {
         auto path = __getMBoardFEPropTreePath(dir, channel) + "/" + subpath;
 
-        return _dev->get_device()->get_tree()->exists(path);
+        return _get_tree()->exists(path);
     }
 
     bool __doesDBoardFEPropTreeEntryExist(const int dir, const size_t channel, const std::string &subpath) const
     {
         auto path = __getDBoardFEPropTreePath(dir, channel) + "/" + subpath;
 
-        return _dev->get_device()->get_tree()->exists(path);
+        return _get_tree()->exists(path);
     }
 
 private:
+
+    uhd::property_tree::sptr _get_tree(void) const
+    {
+        #if UHD_VERSION >= 4000000
+        return _dev->get_tree();
+        #else
+        return _dev->get_device()->get_tree();
+        #endif
+    }
+
     uhd::usrp::multi_usrp::sptr _dev;
     const std::string _type;
     const bool _isNetworkDevice;
