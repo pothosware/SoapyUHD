@@ -93,7 +93,7 @@ jobs:
             INSTALL_PREFIX: /usr/local
         steps:
           - uses: actions/checkout@v2
-          - name: Install SoapySDR
+          - name: Install dependencies
             run: |
                 brew install uhd
                 cd ${{runner.workspace}}
