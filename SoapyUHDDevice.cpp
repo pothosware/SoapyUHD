@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2020 Josh Blum
-//               2019-2020 Nicholas Corgan
+//               2019-2021 Nicholas Corgan
 // SPDX-License-Identifier: GPL-3.0
 
 /***********************************************************************
@@ -196,6 +196,28 @@ public:
         numFrameArgs.units = "buffers";
         numFrameArgs.type = SoapySDR::ArgInfo::INT;
         streamArgs.push_back(numFrameArgs);
+
+        SoapySDR::ArgInfo fullscaleArgs;
+        fullscaleArgs.key = "fullscale";
+        fullscaleArgs.value = "1.0";
+        fullscaleArgs.name = "Full-scale amplitude";
+        fullscaleArgs.description = "Specifies the full-scale amplitude when using floats (not supported for all devices).";
+        fullscaleArgs.type = SoapySDR::ArgInfo::FLOAT;
+        streamArgs.push_back(fullscaleArgs);
+
+        if(direction == SOAPY_SDR_TX)
+        {
+            SoapySDR::ArgInfo underflowPolicyArg;
+            underflowPolicyArg.key = "underflow_policy";
+            underflowPolicyArg.name = "Underflow policy";
+            underflowPolicyArg.description = "How the TX DSP should recover from underflow (not supported for all devices).";
+            underflowPolicyArg.type = SoapySDR::ArgInfo::STRING;
+            underflowPolicyArg.options.push_back("next_burst");
+            underflowPolicyArg.options.push_back("next_packet");
+            underflowPolicyArg.optionNames.push_back("Next burst");
+            underflowPolicyArg.optionNames.push_back("Next packet");
+            streamArgs.push_back(underflowPolicyArg);
+        }
 
         return streamArgs;
     }
@@ -701,6 +723,31 @@ public:
             else return SoapySDR::RangeList(1, SoapySDR::Range(-getSampleRate(dir, channel)/2, getSampleRate(dir, channel)/2));
         }
         return SoapySDR::Device::getFrequencyRange(dir, channel, name);
+    }
+
+    SoapySDR::ArgInfoList getFrequencyArgsInfo(const int, const size_t) const
+    {
+        SoapySDR::ArgInfoList frequencyArgs;
+
+        SoapySDR::ArgInfo modeNArg;
+        modeNArg.key = "mode_n";
+        modeNArg.name = "N divider";
+        modeNArg.description = "Whether the daughterboard tune code should use an integer N divider or fractional N divider (not supported for all devices).";
+        modeNArg.type = SoapySDR::ArgInfo::STRING;
+        modeNArg.options.push_back("integer");
+        modeNArg.options.push_back("fractional");
+        modeNArg.optionNames.push_back("Integer");
+        modeNArg.optionNames.push_back("Fractional");
+        frequencyArgs.emplace_back(std::move(modeNArg));
+
+        SoapySDR::ArgInfo intNStepArg;
+        intNStepArg.key = "int_n_step";
+        intNStepArg.name = "Integer-N tuning step";
+        intNStepArg.description = "The step between valid tunable frequencies when using integer-N tuning (not supported for all devices).";
+        intNStepArg.type = SoapySDR::ArgInfo::FLOAT;
+        frequencyArgs.emplace_back(std::move(intNStepArg));
+
+        return frequencyArgs;
     }
 
     /*******************************************************************
