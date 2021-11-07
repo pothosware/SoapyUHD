@@ -131,23 +131,30 @@ jobs:
                     - cmake_config: -G "Visual Studio 16 2019" -A "Win32"
                       arch: win32
                       build_type: Release
-                      uhd_installer: https://files.ettus.com/binaries/uhd/latest_release/4.1.0.4/Windows-10-x64/uhd_4.1.0.4-release_Winx86_VS2019.exe
+                      uhd_vs_version: 2019
+                      uhd_arch: x86
+
                     - cmake_config: -G "Visual Studio 16 2019" -A "Win32"
                       arch: win32
                       build_type: Debug
-                      uhd_installer: https://files.ettus.com/binaries/uhd/latest_release/4.1.0.4/Windows-10-x64/uhd_4.1.0.4-release_Winx86_VS2019.exe
+                      uhd_vs_version: 2019
+                      uhd_arch: x86
 
                     - cmake_config: -G "Visual Studio 16 2019" -A "x64"
                       arch: x64
                       build_type: Release
-                      uhd_installer: https://files.ettus.com/binaries/uhd/latest_release/4.1.0.4/Windows-10-x64/uhd_4.1.0.4-release_Winx64_VS2019.exe
+                      uhd_vs_version: 2019
+                      uhd_arch: x64
+
                     - cmake_config: -G "Visual Studio 16 2019" -A "x64"
                       arch: x64
                       build_type: Debug
-                      uhd_installer: https://files.ettus.com/binaries/uhd/latest_release/4.1.0.4/Windows-10-x64/uhd_4.1.0.4-release_Winx64_VS2019.exe
+                      uhd_vs_version: 2019
+                      uhd_arch: x64
         env:
             # Easier to have multiple copies of a subpath than deal with CI path parsing issues
             INSTALL_PREFIX: 'C:\Program Files\SoapySDR'
+            UHD_VERSION: 4.1.0.4
             UHD_PREFIX: 'C:\Program Files\UHD'
         steps:
           - uses: actions/checkout@v2
@@ -158,14 +165,16 @@ jobs:
             run: |
                 # No minimum UHD version, so just install a reasonably recent version
                 cd ${{runner.workspace}}
-                Invoke-WebRequest ${{matrix.uhd_installer}} -OutFile uhd_installer.exe
+                $Env:UHD_INSTALLER = https://files.ettus.com/binaries/uhd/latest_release/'$Env:UHD_VERSION'/Windows-10-x64/uhd_'$Env:UHD_VERSION'-release_Win${{matrix.uhd_arch}}_VS${{matrix.uhd_vs_version}}.exe
+                echo '$Env:UHD_INSTALLER'
+                Invoke-WebRequest $Env:UHD_INSTALLER -OutFile uhd_installer.exe
+                ls
                 7z x uhd_installer.exe -o'$Env:UHD_PREFIX' -bd
 
                 # Build against earliest supported SoapySDR
                 git clone https://github.com/pothosware/SoapySDR -b soapy-sdr-0.6.0
                 mkdir SoapySDR\build
                 cd SoapySDR\build
-                cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DENABLE_PYTHON=OFF -DENABLE_PYTHON3=OFF ..
                 cmake ${{matrix.cmake_config}} -DENABLE_PYTHON=OFF -DENABLE_PYTHON3=OFF -DCMAKE_INSTALL_PREFIX="$Env:INSTALL_PREFIX" -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ..
                 cmake --build . --config ${{matrix.build_type}}
                 cmake --install . --config ${{matrix.build_type}}
