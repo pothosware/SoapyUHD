@@ -165,7 +165,7 @@ jobs:
             run: |
                 # No minimum UHD version, so just install a reasonably recent version
                 cd ${{runner.workspace}}
-                $Env:UHD_INSTALLER = https://files.ettus.com/binaries/uhd/latest_release/'$Env:UHD_VERSION'/Windows-10-x64/uhd_'$Env:UHD_VERSION'-release_Win${{matrix.uhd_arch}}_VS${{matrix.uhd_vs_version}}.exe
+                $Env:UHD_INSTALLER = 'https://files.ettus.com/binaries/uhd/latest_release/' + '$Env:UHD_VERSION' + '/Windows-10-x64/uhd_' + '$Env:UHD_VERSION' + '-release_Win${{matrix.uhd_arch}}_VS${{matrix.uhd_vs_version}}.exe'
                 echo '$Env:UHD_INSTALLER'
                 Invoke-WebRequest $Env:UHD_INSTALLER -OutFile uhd_installer.exe
                 ls
