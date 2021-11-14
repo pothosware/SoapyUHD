@@ -25,6 +25,8 @@ cmake_minimum_required(VERSION 2.8.7)
 project(SoapyUHD CXX C)
 enable_testing()
 
+set(CMAKE_CXX_STANDARD 14)
+
 #select the release build type by default to get optimization flags
 if(NOT CMAKE_BUILD_TYPE)
    set(CMAKE_BUILD_TYPE "Release")
@@ -163,9 +165,6 @@ target_link_libraries(soapySupport
 install(TARGETS soapySupport
     DESTINATION ${UHD_ROOT}/lib${LIB_SUFFIX}/uhd/modules
 )
-
-#using C++11 features for this uhd module
-set_target_properties(soapySupport PROPERTIES CXX_STANDARD 11)
 
 ########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
