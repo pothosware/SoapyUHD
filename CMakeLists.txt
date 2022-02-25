@@ -102,6 +102,20 @@ else()
     message(STATUS "  use log.hpp for logging")
 endif()
 
+# UHD has a single "LO config" API define, but the TX LO config
+# functions were added later, so it doesn't mean much. So we check
+# here.
+message(STATUS "Checking uhd::usrp::multi_usrp::get_tx_lo_names() API...")
+message(STATUS "  Reading ${UHD_INCLUDE_DIRS}/uhd/usrp/multi_usrp.hpp...")
+file(READ ${UHD_INCLUDE_DIRS}/uhd/usrp/multi_usrp.hpp multi_usrp_hpp)
+string(FIND "${multi_usrp_hpp}" "get_tx_lo_names" has_tx_lo_config)
+if ("${has_tx_lo_config}" STREQUAL "-1")
+    message(STATUS "  missing TX LO config API")
+else()
+    add_definitions(-DUHD_HAS_TX_LO_CONFIG)
+    message(STATUS "  has TX LO config API")
+endif()
+
 ########################################################################
 # Setup boost
 ########################################################################

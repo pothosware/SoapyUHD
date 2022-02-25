@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2020 Josh Blum
-//               2019-2021 Nicholas Corgan
+//               2019-2022 Nicholas Corgan
 // SPDX-License-Identifier: GPL-3.0
 
 /***********************************************************************
@@ -20,8 +20,12 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/version.hpp>
+#include <algorithm>
 #include <cctype>
+#include <functional>
 #include <iostream>
+#include <iterator>
+#include <unordered_map>
 
 /***********************************************************************
  * Stream wrapper
@@ -45,6 +49,8 @@ public:
     {
         if (args.count("rx_subdev") != 0) _dev->set_rx_subdev_spec(args.at("rx_subdev"));
         if (args.count("tx_subdev") != 0) _dev->set_tx_subdev_spec(args.at("tx_subdev"));
+
+        this->__createSettingsStructs();
     }
 
     /*******************************************************************
@@ -923,6 +929,21 @@ public:
         return SoapySDR::Device::readSensor(dir, channel, name);
     }
 
+    SoapySDR::ArgInfoList getSettingInfo(void) const
+    {
+        SoapySDR::ArgInfoList argInfoList;
+        std::transform(
+            _settings.begin(),
+            _settings.end(),
+            std::back_inserter(argInfoList),
+            [](const std::unordered_map<std::string, Setting>::value_type &mapPair)
+            {
+                return mapPair.second.argInfo;
+            });
+
+        return argInfoList;
+    }
+
     /*******************************************************************
      * GPIO API
      ******************************************************************/
@@ -1039,6 +1060,261 @@ public:
         return _get_tree()->exists(path);
     }
 
+    /*******************************************************************
+     * Deriving non-trivial settings lists on construction
+     ******************************************************************/
+
+    void __createSettingsStructs(void)
+    {
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); ++chan)
+            _txChannelSettings.emplace_back();
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); ++chan)
+            _rxChannelSettings.emplace_back();
+
+#ifdef UHD_HAS_TX_LO_CONFIG
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); ++chan)
+        {
+            auto &channelSettings = _txChannelSettings[chan];
+
+            auto chanTxLoNames = _dev->get_tx_lo_names(chan);
+            chanTxLoNames.emplace_back(uhd::usrp::multi_usrp::ALL_LOS);
+
+            // Generating a getter+setter that takes in a channel for each channel
+            // isn't ideal, but we can't guarantee that each channel will have the
+            // same settings. Since this is done at construction, it won't be a
+            // bottleneck.
+            for(const auto &txLoName: chanTxLoNames)
+            {
+                auto sourceSettingName = txLoName + "_lo_source";
+                auto exportEnabledSettingName = txLoName + "_lo_export_enabled";
+                auto loFreqSettingName = txLoName + "_lo_freq";
+
+                ChannelSetting sourceSetting
+                {
+                    {},
+                    [txLoName, this](const size_t chan) -> std::string
+                    {
+                        return _dev->get_tx_lo_source(txLoName, chan);
+                    },
+                    [txLoName, this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_tx_lo_source(value, txLoName, chan);
+                    }
+                };
+                sourceSetting.argInfo.key = sourceSetting.argInfo.name = sourceSettingName;
+                sourceSetting.argInfo.description = "The TX LO source for the "+txLoName+" LO stage";
+                sourceSetting.argInfo.type = SoapySDR::ArgInfo::STRING;
+
+                ChannelSetting exportEnabledSetting
+                {
+                    {},
+                    [txLoName, this](const size_t chan) -> std::string
+                    {
+                        return SoapySDR::SettingToString(_dev->get_tx_lo_export_enabled(txLoName, chan));
+                    },
+                    [txLoName, this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_tx_lo_export_enabled(
+                            SoapySDR::StringToSetting<bool>(value),
+                            txLoName,
+                            chan);
+                    }
+                };
+                exportEnabledSetting.argInfo.key = exportEnabledSetting.argInfo.name = exportEnabledSettingName;
+                exportEnabledSetting.argInfo.description = "Whether or not the "+txLoName+" LO is exported";
+                exportEnabledSetting.argInfo.type = SoapySDR::ArgInfo::BOOL;
+
+                ChannelSetting loFreqSetting
+                {
+                    {},
+                    [txLoName, this](const size_t chan) -> std::string
+                    {
+                        return SoapySDR::SettingToString(_dev->get_tx_lo_freq(txLoName, chan));
+                    },
+                    [txLoName, this](const size_t chan, const std::string &value) -> void
+                    {
+                        (void)_dev->set_tx_lo_freq(
+                            SoapySDR::StringToSetting<double>(value),
+                            txLoName,
+                            chan);
+                    }
+                };
+                loFreqSetting.argInfo.key = loFreqSetting.argInfo.name = loFreqSettingName;
+                loFreqSetting.argInfo.description = "LO frequency";
+                loFreqSetting.argInfo.type = SoapySDR::ArgInfo::FLOAT;
+                exportEnabledSetting.argInfo.range = metaRangeToRange(_dev->get_tx_lo_freq_range(txLoName, chan));
+
+                channelSettings.emplace(
+                    std::move(sourceSettingName),
+                    std::move(sourceSetting));
+                channelSettings.emplace(
+                    std::move(exportEnabledSettingName),
+                    std::move(exportEnabledSetting));
+                channelSettings.emplace(
+                    std::move(loFreqSettingName),
+                    std::move(loFreqSetting));
+            }
+        }
+#endif
+#ifdef UHD_USRP_MULTI_USRP_LO_CONFIG_API
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); ++chan)
+        {
+            auto &channelSettings = _rxChannelSettings[chan];
+
+            auto chanRxLoNames = _dev->get_rx_lo_names(chan);
+            chanRxLoNames.emplace_back(uhd::usrp::multi_usrp::ALL_LOS);
+
+            // Generating a getter+setter that takes in a channel for each channel
+            // isn't ideal, but we can't guarantee that each channel will have the
+            // same settings. Since this is done at construction, it won't be a
+            // bottleneck.
+            for(const auto &rxLoName: chanRxLoNames)
+            {
+                auto sourceSettingName = rxLoName + "_lo_source";
+                auto exportEnabledSettingName = rxLoName + "_lo_export_enabled";
+                auto loFreqSettingName = rxLoName + "_lo_freq";
+
+                ChannelSetting sourceSetting
+                {
+                    {},
+                    [rxLoName, this](const size_t chan) -> std::string
+                    {
+                        return _dev->get_rx_lo_source(rxLoName, chan);
+                    },
+                    [rxLoName, this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_rx_lo_source(value, rxLoName, chan);
+                    }
+                };
+                sourceSetting.argInfo.key = sourceSetting.argInfo.name = sourceSettingName;
+                sourceSetting.argInfo.description = "The RX LO source for the "+rxLoName+" LO stage";
+                sourceSetting.argInfo.type = SoapySDR::ArgInfo::STRING;
+
+                ChannelSetting exportEnabledSetting
+                {
+                    {},
+                    [rxLoName, this](const size_t chan) -> std::string
+                    {
+                        return SoapySDR::SettingToString(_dev->get_rx_lo_export_enabled(rxLoName, chan));
+                    },
+                    [rxLoName, this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_rx_lo_export_enabled(
+                            SoapySDR::StringToSetting<bool>(value),
+                            rxLoName,
+                            chan);
+                    }
+                };
+                exportEnabledSetting.argInfo.key = exportEnabledSetting.argInfo.name = exportEnabledSettingName;
+                exportEnabledSetting.argInfo.description = "Whether or not the "+rxLoName+" LO is exported";
+                exportEnabledSetting.argInfo.type = SoapySDR::ArgInfo::BOOL;
+
+                ChannelSetting loFreqSetting
+                {
+                    {},
+                    [rxLoName, this](const size_t chan) -> std::string
+                    {
+                        return SoapySDR::SettingToString(_dev->get_rx_lo_freq(rxLoName, chan));
+                    },
+                    [rxLoName, this](const size_t chan, const std::string &value) -> void
+                    {
+                        (void)_dev->set_rx_lo_freq(
+                            SoapySDR::StringToSetting<double>(value),
+                            rxLoName,
+                            chan);
+                    }
+                };
+                loFreqSetting.argInfo.key = loFreqSetting.argInfo.name = loFreqSettingName;
+                loFreqSetting.argInfo.description = "LO frequency";
+                loFreqSetting.argInfo.type = SoapySDR::ArgInfo::FLOAT;
+                exportEnabledSetting.argInfo.range = metaRangeToRange(_dev->get_rx_lo_freq_range(rxLoName, chan));
+
+                channelSettings.emplace(
+                    std::move(sourceSettingName),
+                    std::move(sourceSetting));
+                channelSettings.emplace(
+                    std::move(exportEnabledSettingName),
+                    std::move(exportEnabledSetting));
+                channelSettings.emplace(
+                    std::move(loFreqSettingName),
+                    std::move(loFreqSetting));
+            }
+        }
+#endif
+#ifdef UHD_USRP_MULTI_USRP_POWER_LEVEL
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); ++chan)
+        {
+            // Generating a getter+setter that takes in a channel for each channel
+            // isn't ideal, but we can't guarantee that each channel will have the
+            // same settings. Since this is done at construction, it won't be a
+            // bottleneck.
+            if(_dev->has_tx_power_reference(chan))
+            {
+                ChannelSetting setting
+                {
+                    {},
+                    [this](const size_t chan) -> std::string
+                    {
+                        return SoapySDR::SettingToString(_dev->get_tx_power_reference(chan));
+                    },
+                    [this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_tx_power_reference(
+                            SoapySDR::StringToSetting<double>(value),
+                            chan);
+                    },
+                    [this](const size_t chan) -> SoapySDR::Range
+                    {
+                        return metaRangeToRange(_dev->get_tx_power_range(chan));
+                    },
+                    true // queryRangeAtRuntime
+                };
+                setting.argInfo.key = "reference_power";
+                setting.argInfo.value = "0.0";
+                setting.argInfo.name = "Reference power";
+                setting.argInfo.description = "The channel's reference TX power level. Note: this setting's range depends on various hardware settings.";
+                setting.argInfo.units = "dBm";
+                setting.argInfo.type = SoapySDR::ArgInfo::FLOAT;
+            }
+        }
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); ++chan)
+        {
+            // Generating a getter+setter that takes in a channel for each channel
+            // isn't ideal, but we can't guarantee that each channel will have the
+            // same settings. Since this is done at construction, it won't be a
+            // bottleneck.
+            if(_dev->has_rx_power_reference(chan))
+            {
+                ChannelSetting setting
+                {
+                    {},
+                    [this](const size_t chan) -> std::string
+                    {
+                        return SoapySDR::SettingToString(_dev->get_rx_power_reference(chan));
+                    },
+                    [this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_rx_power_reference(
+                            SoapySDR::StringToSetting<double>(value),
+                            chan);
+                    },
+                    [this](const size_t chan) -> SoapySDR::Range
+                    {
+                        return metaRangeToRange(_dev->get_rx_power_range(chan));
+                    },
+                    true // queryRangeAtRuntime
+                };
+                setting.argInfo.key = "reference_power";
+                setting.argInfo.value = "0.0";
+                setting.argInfo.name = "Reference power";
+                setting.argInfo.description = "The channel's reference RX power level. Note: this setting's range depends on various hardware settings.";
+                setting.argInfo.units = "dBm";
+                setting.argInfo.type = SoapySDR::ArgInfo::FLOAT;
+            }
+        }
+#endif
+    }
+
 private:
 
     uhd::property_tree::sptr _get_tree(void) const
@@ -1053,6 +1329,30 @@ private:
     uhd::usrp::multi_usrp::sptr _dev;
     const std::string _type;
     const bool _isNetworkDevice;
+
+    // These are non-trivial to instantiate, so we'll do it on
+    // construction rather than on-demand.
+
+    struct Setting
+    {
+        SoapySDR::ArgInfo argInfo{};
+        std::function<std::string(void)> getter{nullptr};
+        std::function<void(const std::string&)> setter{nullptr};
+        std::function<SoapySDR::Range(void)> range_getter{nullptr};
+        bool queryRangeAtRuntime{false};
+    };
+    std::unordered_map<std::string, Setting> _settings;
+
+    struct ChannelSetting
+    {
+        SoapySDR::ArgInfo argInfo{};
+        std::function<std::string(const size_t)> getter{nullptr};
+        std::function<void(const size_t, const std::string&)> setter{nullptr};
+        std::function<SoapySDR::Range(const size_t)> range_getter{nullptr};
+        bool queryRangeAtRuntime{false};
+    };
+    std::vector<std::unordered_map<std::string, ChannelSetting>> _txChannelSettings;
+    std::vector<std::unordered_map<std::string, ChannelSetting>> _rxChannelSettings;
 };
 
 /***********************************************************************
