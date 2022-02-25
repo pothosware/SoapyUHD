@@ -929,6 +929,10 @@ public:
         return SoapySDR::Device::readSensor(dir, channel, name);
     }
 
+    /*******************************************************************
+     * Settings API
+     ******************************************************************/
+
     SoapySDR::ArgInfoList getSettingInfo(void) const
     {
         SoapySDR::ArgInfoList argInfoList;
@@ -936,10 +940,52 @@ public:
             _settings.begin(),
             _settings.end(),
             std::back_inserter(argInfoList),
-            [](const std::unordered_map<std::string, Setting>::value_type &mapPair)
+            [](const std::pair<std::string, Setting> &mapPair)
             {
-                return mapPair.second.argInfo;
+                auto argInfo = mapPair.second.argInfo;
+                if(mapPair.second.queryRangeAtRuntime and mapPair.second.rangeGetter)
+                    argInfo.range = mapPair.second.rangeGetter();
+
+                return argInfo;
             });
+
+        return argInfoList;
+    }
+
+    SoapySDR::ArgInfoList getSettingInfo(const int direction, const size_t channel) const
+    {
+        SoapySDR::ArgInfoList argInfoList;
+        const std::vector<std::unordered_map<std::string, ChannelSetting>>* channelSettings = nullptr;
+
+        switch(direction)
+        {
+        case SOAPY_SDR_TX:
+            channelSettings = &_txChannelSettings;
+            break;
+
+        case SOAPY_SDR_RX:
+            channelSettings = &_rxChannelSettings;
+            break;
+
+        default:
+            break;
+        }
+
+        if(channelSettings and (channel < channelSettings->size()))
+        {
+            std::transform(
+                channelSettings->at(channel).begin(),
+                channelSettings->at(channel).end(),
+                std::back_inserter(argInfoList),
+                [channel](const std::pair<std::string, ChannelSetting> &mapPair)
+                {
+                    auto argInfo = mapPair.second.argInfo;
+                    if(mapPair.second.queryRangeAtRuntime and mapPair.second.rangeGetter)
+                        argInfo.range = mapPair.second.rangeGetter(channel);
+
+                    return argInfo;
+                });
+        }
 
         return argInfoList;
     }
@@ -1066,6 +1112,77 @@ public:
 
     void __createSettingsStructs(void)
     {
+        //
+        // Global
+        //
+
+#ifdef UHD_HAS_SYNC_SOURCE_OUT
+        // multi_usrp has no getter or way to query if this capability is
+        // supported, so we need to dive into the property tree directly.
+        {
+            static const auto clock_source_out_path = "/mboards/0/clock_source/output";
+            static const auto time_source_out_path = "/mboards/0/time_source/output";
+
+            auto tree = this->_get_tree();
+            if(tree->exists(clock_source_out_path))
+            {
+                std::string key = "clock_source_out";
+
+                Setting setting
+                {
+                    {},
+                    [this]() -> std::string
+                    {
+                        return SoapySDR::SettingToString(this->_get_tree()->access<bool>(clock_source_out_path).get());
+                    },
+                    [this](const std::string &value) -> void
+                    {
+                        _dev->set_clock_source_out(SoapySDR::StringToSetting<bool>(value));
+                    }
+                };
+                setting.argInfo.key = key;
+                setting.argInfo.value = "true"; // Enabled by default
+                setting.argInfo.name = "Output clock source?";
+                setting.argInfo.description = "Whether or not to send the clock signal to the device's output connector";
+                setting.argInfo.type = SoapySDR::ArgInfo::BOOL;
+
+                _settings.emplace(
+                    std::move(key),
+                    std::move(setting));
+            }
+            if(tree->exists(time_source_out_path))
+            {
+                std::string key = "time_source_out";
+
+                Setting setting
+                {
+                    {},
+                    [this]() -> std::string
+                    {
+                        return SoapySDR::SettingToString(this->_get_tree()->access<bool>(time_source_out_path).get());
+                    },
+                    [this](const std::string &value) -> void
+                    {
+                        _dev->set_time_source_out(SoapySDR::StringToSetting<bool>(value));
+                    }
+                };
+                setting.argInfo.key = key;
+                setting.argInfo.value = "true"; // Enabled by default
+                setting.argInfo.name = "Output time source?";
+                setting.argInfo.description = "Whether or not to send the time signal (PPS) to the device's output connector";
+                setting.argInfo.type = SoapySDR::ArgInfo::BOOL;
+
+                _settings.emplace(
+                    std::move(key),
+                    std::move(setting));
+            }
+        }
+#endif
+
+        //
+        // Per channel
+        //
+
         for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); ++chan)
             _txChannelSettings.emplace_back();
         for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); ++chan)
@@ -1250,6 +1367,8 @@ public:
             // bottleneck.
             if(_dev->has_tx_power_reference(chan))
             {
+                std::string key = "reference_power";
+
                 ChannelSetting setting
                 {
                     {},
@@ -1269,12 +1388,16 @@ public:
                     },
                     true // queryRangeAtRuntime
                 };
-                setting.argInfo.key = "reference_power";
+                setting.argInfo.key = key;
                 setting.argInfo.value = "0.0";
                 setting.argInfo.name = "Reference power";
                 setting.argInfo.description = "The channel's reference TX power level. Note: this setting's range depends on various hardware settings.";
                 setting.argInfo.units = "dBm";
                 setting.argInfo.type = SoapySDR::ArgInfo::FLOAT;
+
+                _txChannelSettings[chan].emplace(
+                    std::move(key),
+                    std::move(setting));
             }
         }
         for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); ++chan)
@@ -1285,6 +1408,8 @@ public:
             // bottleneck.
             if(_dev->has_rx_power_reference(chan))
             {
+                std::string key = "reference_power";
+
                 ChannelSetting setting
                 {
                     {},
@@ -1304,12 +1429,16 @@ public:
                     },
                     true // queryRangeAtRuntime
                 };
-                setting.argInfo.key = "reference_power";
+                setting.argInfo.key = key;
                 setting.argInfo.value = "0.0";
                 setting.argInfo.name = "Reference power";
                 setting.argInfo.description = "The channel's reference RX power level. Note: this setting's range depends on various hardware settings.";
                 setting.argInfo.units = "dBm";
                 setting.argInfo.type = SoapySDR::ArgInfo::FLOAT;
+
+                _rxChannelSettings[chan].emplace(
+                    std::move(key),
+                    std::move(setting));
             }
         }
 #endif
@@ -1338,7 +1467,7 @@ private:
         SoapySDR::ArgInfo argInfo{};
         std::function<std::string(void)> getter{nullptr};
         std::function<void(const std::string&)> setter{nullptr};
-        std::function<SoapySDR::Range(void)> range_getter{nullptr};
+        std::function<SoapySDR::Range(void)> rangeGetter{nullptr};
         bool queryRangeAtRuntime{false};
     };
     std::unordered_map<std::string, Setting> _settings;
@@ -1348,7 +1477,7 @@ private:
         SoapySDR::ArgInfo argInfo{};
         std::function<std::string(const size_t)> getter{nullptr};
         std::function<void(const size_t, const std::string&)> setter{nullptr};
-        std::function<SoapySDR::Range(const size_t)> range_getter{nullptr};
+        std::function<SoapySDR::Range(const size_t)> rangeGetter{nullptr};
         bool queryRangeAtRuntime{false};
     };
     std::vector<std::unordered_map<std::string, ChannelSetting>> _txChannelSettings;

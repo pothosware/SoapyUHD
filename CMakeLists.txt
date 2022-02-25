@@ -116,6 +116,17 @@ else()
     message(STATUS "  has TX LO config API")
 endif()
 
+message(STATUS "Checking uhd::usrp::multi_usrp::set_clock_source_out() API...")
+message(STATUS "  Reading ${UHD_INCLUDE_DIRS}/uhd/usrp/multi_usrp.hpp...")
+file(READ ${UHD_INCLUDE_DIRS}/uhd/usrp/multi_usrp.hpp multi_usrp_hpp)
+string(FIND "${multi_usrp_hpp}" "set_clock_source_out" has_sync_source_out_api)
+if ("${has_sync_source_out}" STREQUAL "-1")
+    message(STATUS "  missing sync source out API")
+else()
+    add_definitions(-DUHD_HAS_SYNC_SOURCE_OUT)
+    message(STATUS "  has sync source out API")
+endif()
+
 ########################################################################
 # Setup boost
 ########################################################################
