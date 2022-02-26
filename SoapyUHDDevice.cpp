@@ -952,6 +952,26 @@ public:
         return argInfoList;
     }
 
+    void writeSetting(const std::string &key, const std::string &value)
+    {
+        auto settingIter = _settings.find(key);
+
+        if(settingIter != _settings.end())
+            settingIter->second.setter(value);
+        else
+            throw std::invalid_argument("Invalid setting: "+key);
+    }
+
+    std::string readSetting(const std::string &key) const
+    {
+        auto settingIter = _settings.find(key);
+
+        if(settingIter != _settings.end())
+            return settingIter->second.getter();
+        else
+            throw std::invalid_argument("Invalid setting: "+key);
+    }
+
     SoapySDR::ArgInfoList getSettingInfo(const int direction, const size_t channel) const
     {
         SoapySDR::ArgInfoList argInfoList;
@@ -988,6 +1008,84 @@ public:
         }
 
         return argInfoList;
+    }
+
+    void writeSetting(const int direction, const size_t channel, const std::string &key, const std::string &value)
+    {
+        const std::vector<std::unordered_map<std::string, ChannelSetting>>* channelSettings = nullptr;
+        std::string dirName;
+
+        switch(direction)
+        {
+        case SOAPY_SDR_TX:
+            channelSettings = &_txChannelSettings;
+            dirName = "TX";
+            break;
+
+        case SOAPY_SDR_RX:
+            channelSettings = &_rxChannelSettings;
+            dirName = "RX";
+            break;
+
+        default:
+            break;
+        }
+
+        if(channelSettings and (channel < channelSettings->size()))
+        {
+            const auto &thisChannelSettings = channelSettings->at(channel);
+
+            auto settingIter = thisChannelSettings.find(key);
+
+            if(settingIter != thisChannelSettings.end())
+                settingIter->second.setter(channel, value);
+            else
+                throw std::invalid_argument(str(boost::format("Invalid %s:%zu setting: %s")
+                    % dirName
+                    % channel
+                    % key));
+        }
+
+        SoapySDR::Device::writeSetting(direction, channel, key, value);
+    }
+
+    std::string readSetting(const int direction, const size_t channel, const std::string &key) const
+    {
+        const std::vector<std::unordered_map<std::string, ChannelSetting>>* channelSettings = nullptr;
+        std::string dirName;
+
+        switch(direction)
+        {
+        case SOAPY_SDR_TX:
+            channelSettings = &_txChannelSettings;
+            dirName = "TX";
+            break;
+
+        case SOAPY_SDR_RX:
+            channelSettings = &_rxChannelSettings;
+            dirName = "RX";
+            break;
+
+        default:
+            break;
+        }
+
+        if(channelSettings and (channel < channelSettings->size()))
+        {
+            const auto &thisChannelSettings = channelSettings->at(channel);
+
+            auto settingIter = thisChannelSettings.find(key);
+
+            if(settingIter != thisChannelSettings.end())
+                return settingIter->second.getter(channel);
+            else
+                throw std::invalid_argument(str(boost::format("Invalid %s:%zu setting: %s")
+                    % dirName
+                    % channel
+                    % key));
+        }
+
+        return SoapySDR::Device::readSetting(direction, channel, key);
     }
 
     /*******************************************************************
