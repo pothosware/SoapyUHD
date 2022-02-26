@@ -1358,7 +1358,7 @@ public:
             }
         }
 #endif
-#ifdef UHD_USRP_MULTI_USRP_POWER_LEVEL
+#ifdef UHD_HAS_POWER_LEVEL
         for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); ++chan)
         {
             // Generating a getter+setter that takes in a channel for each channel
@@ -1435,6 +1435,76 @@ public:
                 setting.argInfo.description = "The channel's reference RX power level. Note: this setting's range depends on various hardware settings.";
                 setting.argInfo.units = "dBm";
                 setting.argInfo.type = SoapySDR::ArgInfo::FLOAT;
+
+                _rxChannelSettings[chan].emplace(
+                    std::move(key),
+                    std::move(setting));
+            }
+        }
+#endif
+#ifdef UHD_HAS_GAIN_PROFILE
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_TX); ++chan)
+        {
+            // Generating a getter+setter that takes in a channel for each channel
+            // isn't ideal, but we can't guarantee that each channel will have the
+            // same settings. Since this is done at construction, it won't be a
+            // bottleneck.
+            auto txGainProfileNames = _dev->get_tx_gain_profile_names(chan);
+            if(not txGainProfileNames.empty())
+            {
+                std::string key = "gain_profile";
+
+                ChannelSetting setting
+                {
+                    {},
+                    [this](const size_t chan) -> std::string
+                    {
+                        return _dev->get_tx_gain_profile(chan);
+                    },
+                    [this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_tx_gain_profile(value, chan);
+                    },
+                };
+                setting.argInfo.key = key;
+                setting.argInfo.name = "Gain profile";
+                setting.argInfo.description = "The radio's gain profile for this channel.";
+                setting.argInfo.type = SoapySDR::ArgInfo::STRING;
+                setting.argInfo.options = std::move(txGainProfileNames);
+
+                _txChannelSettings[chan].emplace(
+                    std::move(key),
+                    std::move(setting));
+            }
+        }
+        for(size_t chan = 0; chan < this->getNumChannels(SOAPY_SDR_RX); ++chan)
+        {
+            // Generating a getter+setter that takes in a channel for each channel
+            // isn't ideal, but we can't guarantee that each channel will have the
+            // same settings. Since this is done at construction, it won't be a
+            // bottleneck.
+            auto rxGainProfileNames = _dev->get_rx_gain_profile_names(chan);
+            if(not rxGainProfileNames.empty())
+            {
+                std::string key = "gain_profile";
+
+                ChannelSetting setting
+                {
+                    {},
+                    [this](const size_t chan) -> std::string
+                    {
+                        return _dev->get_rx_gain_profile(chan);
+                    },
+                    [this](const size_t chan, const std::string &value) -> void
+                    {
+                        _dev->set_rx_gain_profile(value, chan);
+                    },
+                };
+                setting.argInfo.key = key;
+                setting.argInfo.name = "Gain profile";
+                setting.argInfo.description = "The radio's gain profile for this channel.";
+                setting.argInfo.type = SoapySDR::ArgInfo::STRING;
+                setting.argInfo.options = std::move(rxGainProfileNames);
 
                 _rxChannelSettings[chan].emplace(
                     std::move(key),
