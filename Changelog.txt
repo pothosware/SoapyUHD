@@ -3,6 +3,7 @@ Release 0.4.1 (pending)
 
 - Fix get_tree() for X300 on UHD 4.0 release
 - Fix for getBandwidthRange() for SOAPY_SDR_RX
+- Set C++14 which is required in UHD headers
 
 Release 0.4.1 (2020-09-20)
 ==========================
