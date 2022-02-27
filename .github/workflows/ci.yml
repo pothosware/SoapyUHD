@@ -161,7 +161,14 @@ jobs:
           - uses: ilammy/msvc-dev-cmd@v1
             with:
                 arch: ${{matrix.arch}}
-          - name: Install dependencies
+          - name: Download and build Boost # TODO: cache
+            uses: egor-tension/build-boost@v1
+            with:
+                version: 1.71.0 # Matches UHD installer
+                libraries: thread system
+                platform: x64
+                configuration: Release
+          - name: Download and install UHD # TODO: cache
             run: |
                 # No minimum UHD version, so just install a reasonably recent version
                 cd ${{runner.workspace}}
@@ -169,7 +176,8 @@ jobs:
                 echo "Downloading " + $Env:UHD_INSTALLER
                 Invoke-WebRequest $Env:UHD_INSTALLER -OutFile uhd_installer.exe
                 7z x uhd_installer.exe -o'$Env:UHD_PREFIX' -bd
-
+          - name: Download and build SoapySDR
+            run: |
                 # Build against earliest supported SoapySDR
                 git clone https://github.com/pothosware/SoapySDR -b soapy-sdr-0.6.0
                 mkdir SoapySDR\build
