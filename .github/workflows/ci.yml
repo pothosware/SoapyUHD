@@ -162,7 +162,7 @@ jobs:
             with:
                 arch: ${{matrix.arch}}
           - name: Download and build Boost # TODO: cache
-            uses: egor-tension/build-boost@v1
+            uses: egor-tensin/build-boost@v1
             with:
                 version: 1.71.0 # Matches UHD installer
                 libraries: thread system
