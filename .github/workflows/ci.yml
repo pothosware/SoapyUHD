@@ -50,7 +50,7 @@ jobs:
           - uses: actions/checkout@v2
           - name: Install dependencies
             run: |
-                sudo apt install -y libuhd-dev
+                sudo apt-get install --no-install-recommended -y libuhd-dev
                 cd ${{runner.workspace}}
 
                 # Build against earliest supported SoapySDR
