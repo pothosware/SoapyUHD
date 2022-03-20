@@ -66,10 +66,6 @@ jobs:
                 mkdir ${{github.workspace}}/build
                 cd ${{github.workspace}}/build
                 cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{github.workspace}}
-                make
-          - name: Install
-            run: |
-                cd ${{github.workspace}}/build
                 sudo make install
           - name: Test module registration
             run: |
@@ -110,10 +106,6 @@ jobs:
                 mkdir ${{github.workspace}}/build
                 cd ${{github.workspace}}/build
                 cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{github.workspace}}
-                make
-          - name: Install
-            run: |
-                cd ${{github.workspace}}/build
                 sudo make install
           - name: Test module registration
             run: |
