@@ -146,7 +146,7 @@ jobs:
         env:
             # Easier to have multiple copies of a subpath than deal with CI path parsing issues
             INSTALL_PREFIX: 'C:\Program Files\SoapySDR'
-            UHD_VERSION: 4.1.0.4
+            UHD_VERSION: 4.0.0.0
             UHD_PREFIX: 'C:\Program Files\UHD'
             UHD_BINARY_URL: 'https://files.ettus.com/binaries/uhd_stable/uhd_004.000.000.000-release/Windows-10-x64'
         steps:
