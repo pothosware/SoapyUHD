@@ -144,11 +144,7 @@ jobs:
                       uhd_vs_version: 2019
                       uhd_arch: x64
         env:
-            # Easier to have multiple copies of a subpath than deal with CI path parsing issues
             INSTALL_PREFIX: 'C:\Program Files\SoapySDR'
-            UHD_VERSION: 4.0.0.0
-            UHD_PREFIX: 'C:\Program Files\UHD'
-            UHD_BINARY_URL: 'https://files.ettus.com/binaries/uhd_stable/uhd_004.000.000.000-release/Windows-10-x64'
         steps:
           - uses: actions/checkout@v2
           - uses: ilammy/msvc-dev-cmd@v1
@@ -157,20 +153,24 @@ jobs:
           - name: Download and build Boost
             uses: egor-tensin/build-boost@v1
             with:
-                version: 1.70.0 # Matches UHD installer
-                libraries: thread system
+                version: 1.70.0
+                libraries: chrono date_time filesystem program_options system serialization thread unit_test_framework
                 platform: x64
                 configuration: Release
-          - name: Download and install UHD # TODO: cache
+          - name: Download and build UHD # TODO: cache
             run: |
-                # No minimum UHD version, so just install a reasonably recent version
-                cd ${{runner.workspace}}
-                $Env:UHD_INSTALLER = $Env:UHD_BINARY_URL + "/uhd_" + $Env:UHD_VERSION + "-release_Win${{matrix.uhd_arch}}_VS${{matrix.uhd_vs_version}}.exe"
-                echo "Downloading " $Env:UHD_INSTALLER
-                Invoke-WebRequest -URI "$Env:UHD_INSTALLER" -OutFile uhd_installer.exe
-                7z x uhd_installer.exe -o'$Env:UHD_PREFIX' -bd
+                $Env:INCLUDE += ";${{github.workspace}}\boost;$Env:INSTALL_PREFIX\include"
+                $Env:LIB += ";${{github.workspace}}\boost\stage\x64\${{matrix.build_type}}\lib;$Env:INSTALL_PREFIX\lib"
+                git clone https://github.com/EttusResearch/uhd -b v4.0.0.0
+                mkdir uhd\host\build
+                cd uhd\host\build
+                cmake ${{matrix.cmake_config}} -DENABLE_EXAMPLES=OFF -DENABLE_TESTS=OFF -DENABLE_UTILS=OFF -DENABLE_PYTHON_API=OFF -DCMAKE_INSTALL_PREFIX="$Env:INSTALL_PREFIX" -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ..
+                cmake --build . --config ${{matrix.build_type}}
+                cmake --install . --config ${{matrix.build_type}}
           - name: Download and build SoapySDR
             run: |
+                $Env:INCLUDE += ";${{github.workspace}}\boost;$Env:INSTALL_PREFIX\include"
+                $Env:LIB += ";${{github.workspace}}\boost\stage\x64\${{matrix.build_type}}\lib;$Env:INSTALL_PREFIX\lib"
                 # Build against earliest supported SoapySDR
                 git clone https://github.com/pothosware/SoapySDR -b soapy-sdr-0.6.0
                 mkdir SoapySDR\build
