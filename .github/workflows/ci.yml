@@ -154,7 +154,7 @@ jobs:
             uses: egor-tensin/build-boost@v1
             with:
                 version: 1.70.0
-                libraries: chrono date_time filesystem program_options system serialization thread unit_test_framework
+                libraries: chrono date_time filesystem program_options serialization system test thread
                 platform: x64
                 configuration: Release
           - name: Download and build UHD # TODO: cache
