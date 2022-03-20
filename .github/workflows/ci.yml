@@ -50,7 +50,7 @@ jobs:
           - uses: actions/checkout@v2
           - name: Install dependencies
             run: |
-                sudo apt-get install -o APT::Install-Recommends=false -o APT::Install-Suggests=false -y libuhd-dev
+                sudo apt-get install -o APT::Install-Recommends=false -o APT::Install-Suggests=false -y libuhd-dev libboost-thread-dev libboost-system-dev
                 cd ${{runner.workspace}}
 
                 # Build against earliest supported SoapySDR
@@ -148,12 +148,13 @@ jobs:
             INSTALL_PREFIX: 'C:\Program Files\SoapySDR'
             UHD_VERSION: 4.1.0.4
             UHD_PREFIX: 'C:\Program Files\UHD'
+            UHD_BINARY_URL: 'https://files.ettus.com/binaries/uhd_stable/uhd_004.000.000.000-release/Windows-10-x64'
         steps:
           - uses: actions/checkout@v2
           - uses: ilammy/msvc-dev-cmd@v1
             with:
                 arch: ${{matrix.arch}}
-          - name: Download and build Boost # TODO: cache
+          - name: Download and build Boost
             uses: egor-tensin/build-boost@v1
             with:
                 version: 1.70.0 # Matches UHD installer
@@ -164,9 +165,9 @@ jobs:
             run: |
                 # No minimum UHD version, so just install a reasonably recent version
                 cd ${{runner.workspace}}
-                $Env:UHD_INSTALLER = "https://files.ettus.com/binaries/uhd/latest_release/" + $Env:UHD_VERSION + "/Windows-10-x64/uhd_" + $Env:UHD_VERSION + "-release_Win${{matrix.uhd_arch}}_VS${{matrix.uhd_vs_version}}.exe"
+                $Env:UHD_INSTALLER = $Env:UHD_BINARY_URL + "uhd_" + $Env:UHD_VERSION + "-release_Win${{matrix.uhd_arch}}_VS${{matrix.uhd_vs_version}}.exe"
                 echo "Downloading " + $Env:UHD_INSTALLER
-                Invoke-WebRequest $Env:UHD_INSTALLER -OutFile uhd_installer.exe
+                Invoke-WebRequest "$Env:UHD_INSTALLER" -OutFile uhd_installer.exe
                 7z x uhd_installer.exe -o'$Env:UHD_PREFIX' -bd
           - name: Download and build SoapySDR
             run: |
