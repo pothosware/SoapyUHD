@@ -58,7 +58,7 @@ message(STATUS "UHD root directory: ${UHD_ROOT}")
 message(STATUS "UHD include directories: ${UHD_INCLUDE_DIRS}")
 message(STATUS "UHD libraries: ${UHD_LIBRARIES}")
 
-if (NOT SOAPY_ROOT)
+if (NOT SOAPYSDR_ROOT)
     get_filename_component(SOAPYSDR_ROOT "${SoapySDR_INCLUDE_DIRS}/.." ABSOLUTE)
 endif()
 message(STATUS "SoapySDR root directory: ${SOAPYSDR_ROOT}")
