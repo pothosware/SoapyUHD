@@ -58,6 +58,11 @@ message(STATUS "UHD root directory: ${UHD_ROOT}")
 message(STATUS "UHD include directories: ${UHD_INCLUDE_DIRS}")
 message(STATUS "UHD libraries: ${UHD_LIBRARIES}")
 
+if (NOT SOAPY_ROOT)
+    get_filename_component(SOAPYSDR_ROOT "${SoapySDR_INCLUDE_DIRS}/.." ABSOLUTE)
+endif()
+message(STATUS "SoapySDR root directory: ${SOAPYSDR_ROOT}")
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${SoapySDR_INCLUDE_DIRS})
 include_directories(${UHD_INCLUDE_DIRS})
@@ -165,6 +170,8 @@ target_link_libraries(soapySupport
 install(TARGETS soapySupport
     DESTINATION ${UHD_ROOT}/lib${LIB_SUFFIX}/uhd/modules
 )
+
+set(CMAKE_INSTALL_PREFIX ${SOAPYSDR_ROOT})
 
 ########################################################################
 # rpath setup - http://www.cmake.org/Wiki/CMake_RPATH_handling
