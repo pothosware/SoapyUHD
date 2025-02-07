@@ -707,6 +707,14 @@ public:
         if (ret != 0) throw std::runtime_error(str(boost::format("UHDSoapyRxStream::issue_stream_cmd() = %d") % ret));
     }
 
+    #if UHD_VERSION >= 4080000
+    void post_input_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error("post_input_action is not implemented here!");
+    }
+    #endif
+
 private:
     SoapySDR::Device *_device;
     SoapySDR::Stream *_stream;
@@ -850,6 +858,14 @@ public:
 
         return true;
     }
+
+    #if UHD_VERSION >= 4080000
+    void post_output_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error("post_output_action is not implemented here!");
+    }
+    #endif
 
 private:
     bool _active;
