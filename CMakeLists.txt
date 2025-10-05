@@ -29,15 +29,27 @@ set(CMAKE_CXX_STANDARD 14)
 
 #select the release build type by default to get optimization flags
 if(NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE "Release")
-   message(STATUS "Build type not specified: defaulting to release.")
+    set(CMAKE_BUILD_TYPE "Release")
+    message(STATUS "Build type not specified: defaulting to release.")
 endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 
 ########################################################################
-# Dependencies
+# Setup SoapySDR and set default modules location
 ########################################################################
 find_package(SoapySDR "0.6" NO_MODULE REQUIRED)
+
+if (NOT SOAPYSDR_ROOT)
+    get_filename_component(SOAPYSDR_ROOT "${SoapySDR_INCLUDE_DIRS}/.." ABSOLUTE)
+endif()
+message(STATUS "SoapySDR root directory: ${SOAPYSDR_ROOT}")
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set_property(CACHE CMAKE_INSTALL_PREFIX PROPERTY VALUE ${SOAPYSDR_ROOT})
+endif()
+
+########################################################################
+# Dependencies
+########################################################################
 find_package(UHD NO_MODULE)
 
 #try old-style find script
@@ -102,7 +114,7 @@ else()
 endif()
 
 ########################################################################
-# Setup boost
+# Setup Boost
 ########################################################################
 MESSAGE(STATUS "Configuring Boost C++ Libraries...")
 
