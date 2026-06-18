@@ -22,6 +22,7 @@
 #include <uhd/version.hpp>
 #include <cctype>
 #include <iostream>
+#include <boost/lexical_cast.hpp>
 
 /***********************************************************************
  * Stream wrapper

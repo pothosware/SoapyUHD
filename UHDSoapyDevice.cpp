@@ -37,6 +37,7 @@
 #include <boost/bind.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include <algorithm>
 #include <cctype>
