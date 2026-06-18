@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 2.8.12...3.10)
 project(SoapyUHD CXX C)
 enable_testing()
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 #select the release build type by default to get optimization flags
 if(NOT CMAKE_BUILD_TYPE)
