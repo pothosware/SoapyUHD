@@ -13,13 +13,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Build on ${{ matrix.os }} (macports)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: melusina-org/setup-macports@v1
       - name: Install ports
-        run: port install SoapySDR py310-setuptools uhd
-        # Note: MacPorts uhd depends on non-default boost171
+        run: port install SoapySDR py310-setuptools uhd-devel
+        # Note: MacPorts uhd-devel depends on non-default boost181
       - name: Configure
-        run:  BOOST_ROOT=/opt/local/libexec/boost/1.71 cmake -B build
+        run:  BOOST_ROOT=/opt/local/libexec/boost/1.81 cmake -B build
       - name: Build
         run: cmake --build build
       - name: Test
@@ -33,7 +33,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Build on ${{ matrix.os }} (homebrew)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup tools
         run: brew install soapysdr uhd
       - name: Configure
@@ -51,7 +51,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Build on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Setup tools
         run: |
           sudo apt-get update -q -y
