@@ -692,6 +692,13 @@ public:
     }
     #endif
 
+    #if UHD_VERSION >= 4110000
+    uhd::device_addr_t get_stream_info(const size_t /*chan*/) const override
+    {
+        throw uhd::not_implemented_error("get_stream_info is not implemented here!");
+    }
+    #endif
+
 private:
     SoapySDR::Device *_device;
     SoapySDR::Stream *_stream;
@@ -840,6 +847,13 @@ public:
         const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
     {
         throw uhd::not_implemented_error("post_output_action is not implemented here!");
+    }
+    #endif
+
+    #if UHD_VERSION >= 4110000
+    uhd::device_addr_t get_stream_info(const size_t /*chan*/) const override
+    {
+        throw uhd::not_implemented_error("get_stream_info is not implemented here!");
     }
     #endif
 
