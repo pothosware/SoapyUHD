@@ -1,3 +1,9 @@
+Release 0.4.2 (2026-10-10)
+==========================
+
+- Minor fixes
+- Updated CMake builds
+
 Release 0.4.1 (pending)
 ==========================
 
